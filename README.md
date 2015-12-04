@@ -1,5 +1,5 @@
 # btc-crawler
-A Bitcoin network crawler in GO
+A Bitcoin network crawler in Go.
 
 To run:
 
@@ -7,7 +7,7 @@ To run:
     
     btc-crawler
     
-Make sure your $GOPATH and $PATH are set correctly ($PATH should include your $GOBIN folder)
+Make sure your $GOPATH and $PATH are set correctly ($PATH should include your $GOBIN folder).
 
 You may want to redirect output to a file and stderr to /dev/null - net.Conn spits out a lot of errors if it can't connect or a peer sends EOF.
 
