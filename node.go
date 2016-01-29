@@ -2,8 +2,9 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/jinzhu/gorm"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net"
 	"strconv"
@@ -12,53 +13,45 @@ import (
 )
 
 type Node struct {
-	Address   *net.TCPAddr
+	gorm.Model
+
+	Address   string
 	conn      net.Conn
-	Adjacents []*net.TCPAddr
+	Adjacents []*Node
 	PVer      uint32
 	btcNet    wire.BitcoinNet
+	Online    bool
 }
 
 func (n *Node) Connect() error {
-	conn, err := net.DialTimeout("tcp", n.Address.String(), 5*time.Second)
+	conn, err := net.DialTimeout("tcp", n.Address, 5*time.Second)
 
 	if err != nil {
 		log.Print("Connect error:", err)
 		return err
 	}
 
-	if strings.Contains(":", n.Address.String()) {
-		fmt.Println(n.Address.String())
-	}
-
 	n.conn = conn
 	return nil
 }
 
-func (n *Node) convertNetAddress(addr wire.NetAddress) *net.TCPAddr {
+func (n *Node) TcpAddress() *net.TCPAddr {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", n.Address)
+	if err != nil {
+		panic(err)
+	}
+	return tcpAddr
+}
+
+func (n *Node) convertNetAddress(addr *wire.NetAddress) string {
 	ipString := addr.IP.String()
+
 	if strings.Contains(ipString, ":") {
 		// ipv6
-		ipv6Address := "[" + ipString + "]:" + strconv.Itoa(int(addr.Port))
-		tcpAddr, err := net.ResolveTCPAddr("tcp6", ipv6Address)
-
-		if err != nil {
-			log.Print("Converting ipv6 address error:", err)
-		}
-
-		return tcpAddr
-	} else {
-		//ipv4
-		concatAddress := ipString + ":" + strconv.Itoa(int(addr.Port))
-		tcpAddr, err := net.ResolveTCPAddr("tcp4", concatAddress)
-
-		if err != nil {
-			log.Print("Converting address error:", err)
-		}
-
-		return tcpAddr
+		ipString = "[" + ipString + "]"
 	}
 
+	return ipString + ":" + strconv.Itoa(int(addr.Port))
 }
 
 func (n *Node) Handshake() error {
@@ -147,36 +140,40 @@ func (n *Node) GetAddr() error {
 	}
 
 	if res == nil {
-		n.Adjacents = make([]*net.TCPAddr, 0)
+		n.Adjacents = make([]*Node, 0)
 		return nil
 	}
 
 	resAddrMsg := res.(*wire.MsgAddr)
 
 	addrList := resAddrMsg.AddrList
-	tcpAddrList := make([]*net.TCPAddr, 0)
+	adjacents := make([]*Node, len(addrList))
 
-	for _, addr := range addrList {
-		tcpAddrList = append(tcpAddrList, n.convertNetAddress(*addr))
+	for i, addr := range addrList {
+		tcpAddr := n.convertNetAddress(addr)
+		log.Println(tcpAddr)
+		adjacents[i] = NewNode(tcpAddr)
 	}
 
-	n.Adjacents = tcpAddrList
+	n.Adjacents = adjacents
 
 	return nil
 }
 
 func (n *Node) Close() error {
-	if n.conn != nil {
-		err := n.conn.Close()
-		if err != nil {
-			log.Println("Closing connection error:", err)
-			return err
-		}
+	if n.conn == nil {
+		return nil
+	}
+
+	err := n.conn.Close()
+	if err != nil {
+		log.Println("Closing connection error:", err)
+		return err
 	}
 	return nil
 }
 
-func NewNode(addr *net.TCPAddr) *Node {
+func NewNode(addr string) *Node {
 	n := new(Node)
 	n.Address = addr
 	n.btcNet = wire.MainNet
