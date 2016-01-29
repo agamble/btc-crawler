@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"time"
 )
@@ -40,6 +41,7 @@ func (i *Image) Build() {
 					jobs <- neighbour
 				}
 			}
+			fmt.Println("Jobs length:", len(jobs))
 		case <-time.After(10 * time.Second):
 			close(jobs)
 			close(results)
