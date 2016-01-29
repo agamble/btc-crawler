@@ -31,9 +31,11 @@ func (i *Image) Build() {
 		go searcher(jobs, results)
 	}
 
+	count := 0
 	for {
 		select {
 		case node := <-results:
+			count++
 			for _, neighbour := range node.Neighbours() {
 				if !i.seen[neighbour.Address] {
 					i.seen[neighbour.Address] = true
@@ -41,7 +43,9 @@ func (i *Image) Build() {
 				}
 			}
 			fmt.Println("Jobs length:", len(jobs))
-		case <-time.After(10 * time.Second):
+			fmt.Println("Results length:", len(results))
+			fmt.Println("Processed:", count)
+		case <-time.After(20 * time.Second):
 			close(jobs)
 			close(results)
 			i.FinishedAt = time.Now()

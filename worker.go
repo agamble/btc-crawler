@@ -36,7 +36,6 @@ func searcher(jobs <-chan *Node, results chan<- *Node) {
 
 		if err != nil {
 			log.Print("Processing error failure", err)
-			continue
 		}
 
 		results <- n
