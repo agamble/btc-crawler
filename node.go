@@ -15,9 +15,10 @@ import (
 type Node struct {
 	gorm.Model
 
+	ImageId   int
 	Address   string
 	conn      net.Conn
-	Adjacents []*Node
+	adjacents []*Node
 	PVer      uint32
 	btcNet    wire.BitcoinNet
 	Online    bool
@@ -41,6 +42,10 @@ func (n *Node) TcpAddress() *net.TCPAddr {
 		panic(err)
 	}
 	return tcpAddr
+}
+
+func (n *Node) Neighbours() []*Node {
+	return n.adjacents
 }
 
 func (n *Node) convertNetAddress(addr *wire.NetAddress) string {
@@ -140,7 +145,7 @@ func (n *Node) GetAddr() error {
 	}
 
 	if res == nil {
-		n.Adjacents = make([]*Node, 0)
+		n.adjacents = make([]*Node, 0)
 		return nil
 	}
 
@@ -155,7 +160,7 @@ func (n *Node) GetAddr() error {
 		adjacents[i] = NewNode(tcpAddr)
 	}
 
-	n.Adjacents = adjacents
+	n.adjacents = adjacents
 
 	return nil
 }

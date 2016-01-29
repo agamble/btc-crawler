@@ -34,8 +34,7 @@ func (i *Image) Build() {
 	for {
 		select {
 		case node := <-results:
-			i.Nodes = append(i.Nodes, node)
-			for _, neighbour := range node.Adjacents {
+			for _, neighbour := range node.Neighbours() {
 				if !i.seen[neighbour.Address] {
 					i.seen[neighbour.Address] = true
 					jobs <- neighbour
@@ -46,6 +45,7 @@ func (i *Image) Build() {
 			close(jobs)
 			close(results)
 			i.FinishedAt = time.Now()
+			return
 		}
 	}
 }
