@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	_ "github.com/mattn/go-sqlite3"
+	"log"
 	"time"
 )
 
@@ -27,31 +26,71 @@ func (i *Image) Build() {
 
 	i.StartedAt = time.Now()
 
-	for i := 0; i < 200; i++ {
+	for i := 0; i < 4000; i++ {
 		go searcher(jobs, results)
 	}
 
-	count := 0
+	countActive := 1
+	countOnline := 0
+	countProcessed := 0
 	for {
-		select {
-		case node := <-results:
-			count++
+		switch {
+		case countActive > 0:
+			node := <-results
+			countActive--
+			countProcessed++
+			if node.Online {
+				countOnline++
+			}
+			i.Nodes = append(i.Nodes, node)
 			for _, neighbour := range node.Neighbours() {
-				if !i.seen[neighbour.Address] {
+				if i.validAddress(neighbour) && !i.seen[neighbour.Address] {
 					i.seen[neighbour.Address] = true
+					neighbour.Image = i
 					jobs <- neighbour
+					countActive++
 				}
 			}
-			fmt.Println("Jobs length:", len(jobs))
-			fmt.Println("Results length:", len(results))
-			fmt.Println("Processed:", count)
-		case <-time.After(20 * time.Second):
+			if countProcessed%100 == 0 {
+				log.Println("Count online:", countOnline)
+				log.Println("Count active:", countActive)
+				log.Println("Jobs length:", len(jobs))
+				log.Println("Count processed:", countProcessed)
+			}
+		case countActive == 0:
 			close(jobs)
 			close(results)
 			i.FinishedAt = time.Now()
 			return
 		}
 	}
+}
+
+func (i *Image) Save() {
+	db := DbConn()
+
+	db.Create(i)
+
+	for _, n := range i.Nodes {
+		db.Create(n)
+	}
+
+	for _, n := range i.Nodes {
+		for _, neighbour := range n.Neighbours() {
+			db.Create(&Neighbour{SighterId: n.ID, SightedId: neighbour.ID})
+		}
+	}
+}
+
+func (i *Image) validAddress(node *Node) bool {
+	tcpAddr := node.TcpAddress()
+
+	// obviously a port number of zero won't work
+	if tcpAddr.Port == 0 {
+		return false
+	}
+
+	return true
 }
 
 func NewImage(seed *Node) *Image {

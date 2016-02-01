@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
@@ -15,7 +14,8 @@ import (
 type Node struct {
 	gorm.Model
 
-	ImageId   int
+	Image     *Image
+	ImageID   int
 	Address   string
 	conn      net.Conn
 	adjacents []*Node
@@ -25,10 +25,10 @@ type Node struct {
 }
 
 func (n *Node) Connect() error {
-	conn, err := net.DialTimeout("tcp", n.Address, 5*time.Second)
+	conn, err := net.DialTimeout("tcp", n.Address, 30*time.Second)
 
 	if err != nil {
-		log.Print("Connect error:", err)
+		// log.Print("Connect error: ", err)
 		return err
 	}
 
@@ -81,7 +81,7 @@ func (n *Node) Handshake() error {
 		return err
 	}
 
-	res, err := n.receiveMessage("version")
+	res, err := n.receiveMessageTimeout("version")
 
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func (n *Node) Handshake() error {
 	}
 
 	pVer := resVer.ProtocolVersion
-	n.receiveMessage("verack")
+	n.receiveMessageTimeout("verack")
 
 	if pVer < int32(n.PVer) {
 		n.PVer = uint32(pVer)
@@ -104,29 +104,46 @@ func (n *Node) Handshake() error {
 }
 
 func (n *Node) receiveMessage(command string) (wire.Message, error) {
-	count := 10
 	for {
 		msg, _, err := wire.ReadMessage(n.conn, n.PVer, n.btcNet)
 
 		if err != nil {
-			log.Print(err)
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				return nil, netErr
+			}
+
+			// log.Println("reading message error", err)
+			time.Sleep(time.Second)
+			continue
 		}
 
 		if msg == nil {
-			if count == 0 {
-				return nil, errors.New("Failed to receive response")
-			}
-			count--
+			time.Sleep(time.Second)
 			continue
 		}
 
 		if command == msg.Command() {
 			// fmt.Println("Received message with command:", msg.Command())
 			return msg, nil
-		} else {
-			// fmt.Println("Ignored message with command:", msg.Command())
 		}
+		time.Sleep(time.Second)
+		// fmt.Println("Ignored message with command:", msg.Command())
 	}
+
+	return nil, nil
+}
+
+func (n *Node) receiveMessageTimeout(command string) (wire.Message, error) {
+	n.conn.SetReadDeadline(time.Time(time.Now().Add(30 * time.Second)))
+
+	msg, err := n.receiveMessage(command)
+
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+
+	return msg, nil
 }
 
 func (n *Node) GetAddr() error {
@@ -138,7 +155,7 @@ func (n *Node) GetAddr() error {
 		return err
 	}
 
-	res, err := n.receiveMessage("addr")
+	res, err := n.receiveMessageTimeout("addr")
 
 	if err != nil {
 		return err
@@ -156,8 +173,8 @@ func (n *Node) GetAddr() error {
 
 	for i, addr := range addrList {
 		tcpAddr := n.convertNetAddress(addr)
-		log.Println(tcpAddr)
 		adjacents[i] = NewNode(tcpAddr)
+		adjacents[i].Image = n.Image
 	}
 
 	n.adjacents = adjacents

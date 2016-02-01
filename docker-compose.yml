@@ -1,0 +1,16 @@
+crawler:
+  build: .
+  links:
+    - db
+  ulimits:
+    nofile:
+      hard: 5000
+      soft: 5000
+
+
+db:
+  image: postgres
+  environment:
+    - POSTGRES_PASSWORD=centralised
+    - POSTGRES_USER=alexander
+    - POSTGRES_DB=btc
