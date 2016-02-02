@@ -27,6 +27,7 @@ func searcher(jobs <-chan *Node, results chan<- *Node) {
 		n, ok := <-jobs
 
 		if !ok {
+			close(results)
 			return
 		}
 

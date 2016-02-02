@@ -195,6 +195,21 @@ func (n *Node) Close() error {
 	return nil
 }
 
+func (n *Node) IsValid() bool {
+	tcpAddr := n.TcpAddress()
+
+	// obviously a port number of zero won't work
+	if tcpAddr.Port == 0 {
+		return false
+	}
+
+	return true
+}
+
+func NewSeed() *Node {
+	return NewNode("148.251.238.178:8333")
+}
+
 func NewNode(addr string) *Node {
 	n := new(Node)
 	n.Address = addr
