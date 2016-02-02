@@ -1,17 +1,22 @@
 package main
 
 import (
-// "time"
+	"os"
+	"time"
 )
 
 func setupDb() {
-	// db, _ := gorm.Open("postgres", "postgres://alexander:centralised@db/btc")
+	// db, _ := gorm.Open("postgres", "")
 	db := DbConn()
 
 	db.AutoMigrate(&Image{}, &Node{}, &Neighbour{})
 }
 
 func main() {
+
+	if os.Getenv("env") == "docker-prod" {
+		time.Sleep(time.Second * 10)
+	}
 
 	setupDb()
 
