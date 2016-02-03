@@ -10,7 +10,6 @@ type Dispatcher struct {
 	workers      int
 	jobs         chan *Node
 	results      chan *Node
-	seen         map[string]bool
 }
 
 type ProgressStat struct {
@@ -24,8 +23,6 @@ func (d *Dispatcher) BuildImage() *Image {
 	seed := NewSeed()
 	image := NewImage(seed)
 
-	d.seen = make(map[string]bool)
-
 	d.jobs <- seed
 
 	d.setupWorkers()
@@ -34,16 +31,30 @@ func (d *Dispatcher) BuildImage() *Image {
 	return image
 }
 
-func (d *Dispatcher) processNodes(i *Image) {
+func (d *Dispatcher) startDbWorkers() chan *Node {
+	db := make(chan *Node, 1000)
+	for i := 0; i < 20; i++ {
+		go DbWorker(db)
+	}
+
+	return db
+}
+
+func (d *Dispatcher) processNodes(image *Image) {
 
 	countActive := 1
 	countProcessed := 0
 	countOnline := 0
 
+	// db := d.startDbWorkers()
+
 	for {
 		switch {
 		case countActive > 0:
 			node := <-d.results
+
+			// db <- node
+
 			countActive--
 			countProcessed++
 
@@ -51,12 +62,10 @@ func (d *Dispatcher) processNodes(i *Image) {
 				countOnline++
 			}
 
-			i.Add(node)
-
-			for _, neighbour := range node.Neighbours() {
-				if neighbour.IsValid() && !d.seen[neighbour.Address] {
-					d.seen[neighbour.Address] = true
-					neighbour.Image = i
+			for _, addr := range node.Neighbours() {
+				if !image.Has(addr) {
+					neighbour := NewNode(addr)
+					image.Add(neighbour)
 					d.jobs <- neighbour
 					countActive++
 				}
@@ -67,11 +76,12 @@ func (d *Dispatcher) processNodes(i *Image) {
 				log.Println("Count active:", countActive)
 				log.Println("Jobs length:", len(d.jobs))
 				log.Println("Count processed:", countProcessed)
+				// log.Println("DB length:", len(db))
 			}
 		case countActive == 0:
 			close(d.jobs)
 			close(d.results)
-			i.FinishedAt = time.Now()
+			image.FinishedAt = time.Now()
 			return
 		}
 	}

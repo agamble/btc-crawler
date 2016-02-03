@@ -4,8 +4,8 @@ crawler:
     - db
   ulimits:
     nofile:
-      hard: 5000
-      soft: 5000
+      hard: 16000
+      soft: 16000
 
 
 db:

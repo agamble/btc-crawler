@@ -1,9 +1,14 @@
 package main
 
 import (
+	"flag"
+	"log"
 	"os"
+	"runtime/pprof"
 	"time"
 )
+
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 func setupDb() {
 	// db, _ := gorm.Open("postgres", "")
@@ -20,7 +25,7 @@ func main() {
 
 	setupDb()
 
-	dispatcher := NewDispatcher(4000)
+	dispatcher := NewDispatcher(15000)
 	image := dispatcher.BuildImage()
 	image.Save()
 
@@ -28,5 +33,12 @@ func main() {
 	// db.LogMode(true)
 	//
 	// db.AutoMigrate(&Image{}, &Node{}, &Neighbour{})
+	f, err := os.Create("/data/mem")
+	if err != nil {
+		log.Fatal(err)
+	}
+	pprof.WriteHeapProfile(f)
+	f.Close()
+	return
 
 }

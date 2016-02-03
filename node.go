@@ -15,10 +15,10 @@ type Node struct {
 	gorm.Model
 
 	Image     *Image
-	ImageID   int
+	ImageID   uint
 	Address   string
 	conn      net.Conn
-	adjacents []*Node
+	adjacents []string
 	PVer      uint32
 	btcNet    wire.BitcoinNet
 	Online    bool
@@ -44,7 +44,7 @@ func (n *Node) TcpAddress() *net.TCPAddr {
 	return tcpAddr
 }
 
-func (n *Node) Neighbours() []*Node {
+func (n *Node) Neighbours() []string {
 	return n.adjacents
 }
 
@@ -162,19 +162,19 @@ func (n *Node) GetAddr() error {
 	}
 
 	if res == nil {
-		n.adjacents = make([]*Node, 0)
+		n.adjacents = make([]string, 0)
 		return nil
 	}
 
 	resAddrMsg := res.(*wire.MsgAddr)
 
 	addrList := resAddrMsg.AddrList
-	adjacents := make([]*Node, len(addrList))
+	adjacents := make([]string, 0, 1000)
 
-	for i, addr := range addrList {
+	for _, addr := range addrList {
 		tcpAddr := n.convertNetAddress(addr)
-		adjacents[i] = NewNode(tcpAddr)
-		adjacents[i].Image = n.Image
+
+		adjacents = append(adjacents, tcpAddr)
 	}
 
 	n.adjacents = adjacents
