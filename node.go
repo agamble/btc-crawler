@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/jinzhu/gorm"
-	_ "github.com/mattn/go-sqlite3"
+	// _ "github.com/mattn/go-sqlite3"
 	"log"
 	"net"
 	"strconv"
@@ -103,7 +103,7 @@ func (n *Node) Handshake() error {
 	return nil
 }
 
-func (n *Node) receiveMessage(command string) (wire.Message, error) {
+func (n *Node) ReceiveMessage(command string) (wire.Message, error) {
 	for {
 		msg, _, err := wire.ReadMessage(n.conn, n.PVer, n.btcNet)
 
@@ -136,7 +136,7 @@ func (n *Node) receiveMessage(command string) (wire.Message, error) {
 func (n *Node) receiveMessageTimeout(command string) (wire.Message, error) {
 	n.conn.SetReadDeadline(time.Time(time.Now().Add(30 * time.Second)))
 
-	msg, err := n.receiveMessage(command)
+	msg, err := n.ReceiveMessage(command)
 
 	if err != nil {
 		log.Print(err)
@@ -193,6 +193,23 @@ func (n *Node) Close() error {
 		return err
 	}
 	return nil
+}
+
+func (n *Node) Inv() *wire.MsgInv {
+	res, err := n.ReceiveMessage("inv")
+	if err != nil {
+		log.Print("Failed receiving inv")
+		return nil
+	}
+
+	resInv, ok := res.(*wire.MsgInv)
+
+	if !ok {
+		log.Print("Failed converting inv")
+		return nil
+	}
+
+	return resInv
 }
 
 func (n *Node) IsValid() bool {

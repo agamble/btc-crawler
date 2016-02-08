@@ -12,13 +12,6 @@ type Dispatcher struct {
 	results      chan *Node
 }
 
-type ProgressStat struct {
-	countProcessed int
-	countOnline    int
-	countOffline   int
-	countJobs      int
-}
-
 func (d *Dispatcher) BuildImage() *Image {
 	seed := NewSeed()
 	image := NewImage(seed)
@@ -31,14 +24,14 @@ func (d *Dispatcher) BuildImage() *Image {
 	return image
 }
 
-func (d *Dispatcher) startDbWorkers() chan *Node {
-	db := make(chan *Node, 1000)
-	for i := 0; i < 20; i++ {
-		go DbWorker(db)
-	}
-
-	return db
-}
+// func (d *Dispatcher) startDbWorkers() chan *Node {
+// 	db := make(chan *Node, 1000)
+// 	for i := 0; i < 20; i++ {
+// 		go DbWorker(db)
+// 	}
+//
+// 	return db
+// }
 
 func (d *Dispatcher) processNodes(image *Image) {
 
@@ -59,6 +52,7 @@ func (d *Dispatcher) processNodes(image *Image) {
 			countProcessed++
 
 			if node.Online {
+				image.AddOnlineNode(node)
 				countOnline++
 			}
 

@@ -1,20 +1,26 @@
 package main
 
 import (
-	"flag"
-	"log"
+	"github.com/btcsuite/btcd/wire"
 	"os"
-	"runtime/pprof"
 	"time"
 )
-
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 func setupDb() {
 	// db, _ := gorm.Open("postgres", "")
 	db := DbConn()
 
 	db.AutoMigrate(&Image{}, &Node{}, &Neighbour{})
+}
+
+func startListeners(onlineNodes []*Node) {
+	invPipe := make(chan []*wire.InvVect)
+
+	go invVectHandler(invPipe)
+
+	for _, node := range onlineNodes {
+		go listener(node, invPipe)
+	}
 }
 
 func main() {
@@ -25,20 +31,18 @@ func main() {
 
 	setupDb()
 
-	dispatcher := NewDispatcher(15000)
+	dispatcher := NewDispatcher(10000)
 	image := dispatcher.BuildImage()
 	image.Save()
 
-	// db, _ := gorm.Open("postgres", "postgres://alexander:centralised@db/btc")
-	// db.LogMode(true)
-	//
-	// db.AutoMigrate(&Image{}, &Node{}, &Neighbour{})
-	f, err := os.Create("/data/mem")
-	if err != nil {
-		log.Fatal(err)
-	}
-	pprof.WriteHeapProfile(f)
-	f.Close()
+	onlineNodes := image.OnlineNodes()
+	image = nil
+	startListeners(onlineNodes)
+
+	quit := make(chan bool)
+
+	<-quit
+
 	return
 
 }
