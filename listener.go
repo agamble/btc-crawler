@@ -16,7 +16,10 @@ func receiveMessage(node *Node, listener chan *wire.MsgInv) {
 		return
 	}
 
-	msg := node.Inv()
+	msg, err := node.Inv()
+	if err != nil {
+		return
+	}
 
 	listener <- msg
 }

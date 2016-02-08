@@ -195,21 +195,21 @@ func (n *Node) Close() error {
 	return nil
 }
 
-func (n *Node) Inv() *wire.MsgInv {
+func (n *Node) Inv() (*wire.MsgInv, error) {
 	res, err := n.ReceiveMessage("inv")
 	if err != nil {
 		log.Print("Failed receiving inv")
-		return nil
+		return nil, err
 	}
 
 	resInv, ok := res.(*wire.MsgInv)
 
 	if !ok {
 		log.Print("Failed converting inv")
-		return nil
+		return nil, err
 	}
 
-	return resInv
+	return resInv, nil
 }
 
 func (n *Node) IsValid() bool {
