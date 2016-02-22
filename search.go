@@ -1,7 +1,9 @@
 package main
 
 import (
-	"github.com/btcsuite/btcd/wire"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"time"
 )
@@ -13,17 +15,10 @@ func setupDb() {
 	db.AutoMigrate(&Image{}, &Node{}, &Neighbour{})
 }
 
-func startListeners(onlineNodes []*Node) {
-	invPipe := make(chan []*wire.InvVect)
-
-	go invVectHandler(invPipe)
-
-	for _, node := range onlineNodes {
-		go listener(node, invPipe)
-	}
-}
-
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("0.0.0.0:6060", nil))
+	}()
 
 	if os.Getenv("env") == "docker-prod" {
 		time.Sleep(time.Second * 10)
@@ -31,17 +26,8 @@ func main() {
 
 	setupDb()
 
-	dispatcher := NewDispatcher(10000)
-	image := dispatcher.BuildImage()
-	image.Save()
-
-	onlineNodes := image.OnlineNodes()
-	image = nil
-	startListeners(onlineNodes)
-
-	quit := make(chan bool)
-
-	<-quit
+	dispatcher := NewDispatcher()
+	_ = dispatcher.BuildImage(20000)
 
 	return
 

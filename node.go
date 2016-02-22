@@ -4,10 +4,14 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/jinzhu/gorm"
 	// _ "github.com/mattn/go-sqlite3"
+	"errors"
+	"github.com/AndreasBriese/bbloom"
+	"io"
 	"log"
 	"net"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -22,6 +26,20 @@ type Node struct {
 	PVer      uint32
 	btcNet    wire.BitcoinNet
 	Online    bool
+
+	sightings []*invSighting
+	invSeen   bbloom.Bloom
+}
+
+type watchProgress struct {
+	uniqueInvSeen int
+	address       string
+}
+
+type invSighting struct {
+	Type      wire.InvType
+	Hash      []byte
+	Timestamp time.Time
 }
 
 func (n *Node) Connect() error {
@@ -103,8 +121,23 @@ func (n *Node) Handshake() error {
 	return nil
 }
 
+func (n *Node) pong(ping *wire.MsgPing) {
+	pongMsg := wire.NewMsgPong(ping.Nonce)
+
+	for i := 0; i < 2; i++ {
+		err := wire.WriteMessage(n.conn, pongMsg, n.PVer, n.btcNet)
+
+		if err != nil {
+			log.Println("Failed to send pong", err)
+			continue
+		}
+
+		return
+	}
+}
+
 func (n *Node) ReceiveMessage(command string) (wire.Message, error) {
-	for {
+	for i := 0; i < 50; i++ {
 		msg, _, err := wire.ReadMessage(n.conn, n.PVer, n.btcNet)
 
 		if err != nil {
@@ -112,34 +145,128 @@ func (n *Node) ReceiveMessage(command string) (wire.Message, error) {
 				return nil, netErr
 			}
 
-			// log.Println("reading message error", err)
-			time.Sleep(time.Second)
+			if opErr, ok := err.(*net.OpError); ok && opErr.Err.Error() == syscall.ECONNRESET.Error() {
+				return nil, opErr
+			}
+
+			// stop trying if there's an IO error
+			if err == io.EOF || err == io.ErrUnexpectedEOF || err == io.ErrClosedPipe {
+				return nil, err
+			}
+
+			// otherwise we've received some generic error, and try again
 			continue
 		}
 
-		if msg == nil {
-			time.Sleep(time.Second)
+		// Always respond to a ping right away
+		if ping, ok := msg.(*wire.MsgPing); ok && wire.CmdPing == msg.Command() {
+			n.pong(ping)
 			continue
 		}
 
 		if command == msg.Command() {
-			// fmt.Println("Received message with command:", msg.Command())
 			return msg, nil
 		}
-		time.Sleep(time.Second)
-		// fmt.Println("Ignored message with command:", msg.Command())
 	}
 
-	return nil, nil
+	return nil, errors.New("Failed to receive a message from node")
+}
+
+func (n *Node) Inv(invC chan<- []*invSighting, sightings []*invSighting) {
+	res, err := n.ReceiveMessage("inv")
+	now := time.Now()
+
+	if err != nil {
+		invC <- nil
+		return
+	}
+
+	resInv, ok := res.(*wire.MsgInv)
+
+	if !ok {
+		invC <- nil
+		return
+	}
+
+	for i, invVect := range resInv.InvList {
+		if !n.invSeen.Has(invVect.Hash[:]) {
+			sighting := &invSighting{Hash: invVect.Hash[:], Type: invVect.Type, Timestamp: now}
+
+			if len(sightings) <= i {
+				sightings = append(sightings, sighting)
+			} else {
+				sightings[i] = sighting
+			}
+
+			n.invSeen.Add(invVect.Hash[:])
+		}
+	}
+
+	invC <- sightings
+}
+
+func (n *Node) Setup() error {
+	err := n.Connect()
+
+	if err != nil {
+		return err
+	}
+
+	err = n.Handshake()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string) {
+	resultC := make(chan []*invSighting, 1)
+	n.invSeen = bbloom.New(float64(100000), float64(0.01))
+
+	if err := n.Setup(); err != nil {
+		return
+	}
+
+	// took 50k size from max size specification
+	sightings := make([]*invSighting, 10)
+
+	// use a ticker to monitor watcher progress
+	ticker := time.NewTicker(time.Second * 5)
+	defer ticker.Stop()
+
+	go n.Inv(resultC, sightings)
+
+	nilCount := 0
+	for {
+		select {
+		case <-ticker.C:
+			progressC <- &watchProgress{address: n.Address, uniqueInvSeen: len(n.sightings)}
+		case sightings = <-resultC:
+			if sightings == nil {
+				if nilCount > 5 {
+					stopC <- n.Address
+					return
+				}
+				nilCount++
+			} else {
+				n.sightings = append(n.sightings, sightings...)
+				nilCount = 0
+			}
+
+			go n.Inv(resultC, sightings)
+		}
+	}
 }
 
 func (n *Node) receiveMessageTimeout(command string) (wire.Message, error) {
 	n.conn.SetReadDeadline(time.Time(time.Now().Add(30 * time.Second)))
+	defer n.conn.SetReadDeadline(time.Time{})
 
 	msg, err := n.ReceiveMessage(command)
 
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 
@@ -151,7 +278,6 @@ func (n *Node) GetAddr() error {
 	err := wire.WriteMessage(n.conn, getAddrMsg, n.PVer, n.btcNet)
 
 	if err != nil {
-		log.Print(err)
 		return err
 	}
 
@@ -173,7 +299,6 @@ func (n *Node) GetAddr() error {
 
 	for _, addr := range addrList {
 		tcpAddr := n.convertNetAddress(addr)
-
 		adjacents = append(adjacents, tcpAddr)
 	}
 
@@ -193,23 +318,6 @@ func (n *Node) Close() error {
 		return err
 	}
 	return nil
-}
-
-func (n *Node) Inv() (*wire.MsgInv, error) {
-	res, err := n.ReceiveMessage("inv")
-	if err != nil {
-		log.Print("Failed receiving inv")
-		return nil, err
-	}
-
-	resInv, ok := res.(*wire.MsgInv)
-
-	if !ok {
-		log.Print("Failed converting inv")
-		return nil, err
-	}
-
-	return resInv, nil
 }
 
 func (n *Node) IsValid() bool {

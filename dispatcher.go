@@ -6,95 +6,54 @@ import (
 )
 
 type Dispatcher struct {
-	currentImage *Image
-	workers      int
-	jobs         chan *Node
-	results      chan *Node
+	status map[string]int
 }
 
-func (d *Dispatcher) BuildImage() *Image {
-	seed := NewSeed()
-	image := NewImage(seed)
+func (d *Dispatcher) BuildImage(workers int) *Image {
+	crawler := NewCrawler(workers)
 
-	d.jobs <- seed
+	crawler.Start()
+	image := <-crawler.Done
 
-	d.setupWorkers()
-	d.processNodes(image)
+	onlineNodes := image.OnlineNodes()
+	image = nil
+
+	progressC := make(chan *watchProgress)
+	doneC := make(chan string)
+
+	ticker := time.NewTicker(time.Second * 5)
+	defer ticker.Stop()
+
+	for _, node := range onlineNodes {
+		go node.Watch(progressC, doneC)
+	}
+
+	for {
+		select {
+		case <-ticker.C:
+			sum := 0
+			for _, m := range d.status {
+				if m != -1 {
+					sum += m
+				}
+			}
+			average := sum / len(onlineNodes)
+			log.Printf("Average inv processed: %d", average)
+			log.Printf("Total inv processed: %d", sum)
+		case progress := <-progressC:
+			d.status[progress.address] = progress.uniqueInvSeen
+		case address := <-doneC:
+			d.status[address] = -1
+			log.Printf("Lost connection with %s", address)
+		}
+	}
 
 	return image
 }
 
-// func (d *Dispatcher) startDbWorkers() chan *Node {
-// 	db := make(chan *Node, 1000)
-// 	for i := 0; i < 20; i++ {
-// 		go DbWorker(db)
-// 	}
-//
-// 	return db
-// }
-
-func (d *Dispatcher) processNodes(image *Image) {
-
-	countActive := 1
-	countProcessed := 0
-	countOnline := 0
-
-	// db := d.startDbWorkers()
-
-	for {
-		switch {
-		case countActive > 0:
-			node := <-d.results
-
-			// db <- node
-
-			countActive--
-			countProcessed++
-
-			if node.Online {
-				image.AddOnlineNode(node)
-				countOnline++
-			}
-
-			for _, addr := range node.Neighbours() {
-				if !image.Has(addr) {
-					neighbour := NewNode(addr)
-					image.Add(neighbour)
-					d.jobs <- neighbour
-					countActive++
-				}
-			}
-
-			if countProcessed%100 == 0 {
-				log.Println("Count online:", countOnline)
-				log.Println("Count active:", countActive)
-				log.Println("Jobs length:", len(d.jobs))
-				log.Println("Count processed:", countProcessed)
-				// log.Println("DB length:", len(db))
-			}
-		case countActive == 0:
-			close(d.jobs)
-			close(d.results)
-			image.FinishedAt = time.Now()
-			return
-		}
-	}
-}
-
-func (d *Dispatcher) setupWorkers() {
-	for i := 0; i < d.workers; i++ {
-		go searcher(d.jobs, d.results)
-	}
-}
-
-func (d *Dispatcher) reportProgress() {
-}
-
-func NewDispatcher(workers int) *Dispatcher {
+func NewDispatcher() *Dispatcher {
 	d := new(Dispatcher)
-	d.workers = workers
-	d.jobs = make(chan *Node, 1000000)
-	d.results = make(chan *Node, 100)
+	d.status = make(map[string]int)
 
 	return d
 }
