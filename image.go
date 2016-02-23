@@ -132,7 +132,6 @@ func (i *Image) fastSaveNeighbours() {
 }
 
 func (i *Image) Add(node *Node) {
-	node.Image = i
 	i.nodes = append(i.nodes, node)
 	i.seen[node.Address] = node
 }

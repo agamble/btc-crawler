@@ -4,11 +4,12 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/jinzhu/gorm"
 	// _ "github.com/mattn/go-sqlite3"
+	"encoding/gob"
 	"errors"
-	"github.com/AndreasBriese/bbloom"
 	"io"
 	"log"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"syscall"
@@ -28,7 +29,6 @@ type Node struct {
 	Online    bool
 
 	sightings []*invSighting
-	invSeen   bbloom.Bloom
 }
 
 type watchProgress struct {
@@ -172,9 +172,10 @@ func (n *Node) ReceiveMessage(command string) (wire.Message, error) {
 	return nil, errors.New("Failed to receive a message from node")
 }
 
-func (n *Node) Inv(invC chan<- []*invSighting, sightings []*invSighting) {
+func (n *Node) Inv(invC chan<- []*invSighting) {
 	res, err := n.ReceiveMessage("inv")
 	now := time.Now()
+	sightings := make([]*invSighting, 0, 40)
 
 	if err != nil {
 		invC <- nil
@@ -188,18 +189,9 @@ func (n *Node) Inv(invC chan<- []*invSighting, sightings []*invSighting) {
 		return
 	}
 
-	for i, invVect := range resInv.InvList {
-		if !n.invSeen.Has(invVect.Hash[:]) {
-			sighting := &invSighting{Hash: invVect.Hash[:], Type: invVect.Type, Timestamp: now}
-
-			if len(sightings) <= i {
-				sightings = append(sightings, sighting)
-			} else {
-				sightings[i] = sighting
-			}
-
-			n.invSeen.Add(invVect.Hash[:])
-		}
+	for _, invVect := range resInv.InvList {
+		sighting := &invSighting{Hash: invVect.Hash[:], Type: invVect.Type, Timestamp: now}
+		sightings = append(sightings, sighting)
 	}
 
 	invC <- sightings
@@ -221,29 +213,57 @@ func (n *Node) Setup() error {
 	return nil
 }
 
+func exists(name string) bool {
+	if _, err := os.Stat(name); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func (n *Node) writeInv(sightings []*invSighting) {
+	filePath := "/inv/" + n.Address
+
+	if !exists(filePath) {
+		os.Create(filePath)
+	}
+
+	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	enc := gob.NewEncoder(f)
+	err = enc.Encode(sightings)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string) {
 	resultC := make(chan []*invSighting, 1)
-	n.invSeen = bbloom.New(float64(100000), float64(0.01))
 
 	if err := n.Setup(); err != nil {
 		return
 	}
 
-	// took 50k size from max size specification
-	sightings := make([]*invSighting, 10)
-
 	// use a ticker to monitor watcher progress
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
-	go n.Inv(resultC, sightings)
+	go n.Inv(resultC)
+
+	countProcessed := 0
 
 	nilCount := 0
 	for {
 		select {
 		case <-ticker.C:
-			progressC <- &watchProgress{address: n.Address, uniqueInvSeen: len(n.sightings)}
-		case sightings = <-resultC:
+			progressC <- &watchProgress{address: n.Address, uniqueInvSeen: countProcessed}
+		case sightings := <-resultC:
 			if sightings == nil {
 				if nilCount > 5 {
 					stopC <- n.Address
@@ -251,11 +271,12 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string) {
 				}
 				nilCount++
 			} else {
-				n.sightings = append(n.sightings, sightings...)
 				nilCount = 0
 			}
 
-			go n.Inv(resultC, sightings)
+			countProcessed += len(sightings)
+			go n.Inv(resultC)
+			n.writeInv(sightings)
 		}
 	}
 }

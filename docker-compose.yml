@@ -8,6 +8,8 @@ crawler:
     nofile:
       hard: 25000
       soft: 25000
+  volumes:
+    - /out:/inv
 
 
 db:
