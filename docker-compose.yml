@@ -1,20 +1,20 @@
 crawler:
   build: .
-  links:
-    - db
+  # links:
+  #   - db
   ports:
     - "6060:6060"
   ulimits:
     nofile:
-      hard: 25000
-      soft: 25000
+      hard: 50000
+      soft: 50000
   volumes:
     - /out:/inv
 
 
-db:
-  image: postgres
-  environment:
-    - POSTGRES_PASSWORD=centralised
-    - POSTGRES_USER=alexander
-    - POSTGRES_DB=btc
+# db:
+#   image: postgres
+#   environment:
+#     - POSTGRES_PASSWORD=centralised
+#     - POSTGRES_USER=alexander
+#     - POSTGRES_DB=btc

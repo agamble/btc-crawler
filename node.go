@@ -1,15 +1,14 @@
 package main
 
 import (
-	"github.com/btcsuite/btcd/wire"
-	"github.com/jinzhu/gorm"
-	// _ "github.com/mattn/go-sqlite3"
 	"encoding/gob"
 	"errors"
+	"github.com/btcsuite/btcd/wire"
 	"io"
 	"log"
 	"net"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"syscall"
@@ -17,10 +16,6 @@ import (
 )
 
 type Node struct {
-	gorm.Model
-
-	Image     *Image
-	ImageID   uint
 	Address   string
 	conn      net.Conn
 	adjacents []string
@@ -29,16 +24,13 @@ type Node struct {
 	Online    bool
 
 	sightings []*invSighting
-}
 
-type watchProgress struct {
-	uniqueInvSeen int
-	address       string
+	doneC   chan struct{}
+	outPath string
 }
 
 type invSighting struct {
-	Type      wire.InvType
-	Hash      []byte
+	InvVects  []wire.InvVect
 	Timestamp time.Time
 }
 
@@ -172,10 +164,9 @@ func (n *Node) ReceiveMessage(command string) (wire.Message, error) {
 	return nil, errors.New("Failed to receive a message from node")
 }
 
-func (n *Node) Inv(invC chan<- []*invSighting) {
+func (n *Node) Inv(invC chan<- *invSighting) {
 	res, err := n.ReceiveMessage("inv")
 	now := time.Now()
-	sightings := make([]*invSighting, 0, 40)
 
 	if err != nil {
 		invC <- nil
@@ -189,12 +180,15 @@ func (n *Node) Inv(invC chan<- []*invSighting) {
 		return
 	}
 
-	for _, invVect := range resInv.InvList {
-		sighting := &invSighting{Hash: invVect.Hash[:], Type: invVect.Type, Timestamp: now}
-		sightings = append(sightings, sighting)
+	sighting := new(invSighting)
+	sighting.Timestamp = now
+	sighting.InvVects = make([]wire.InvVect, len(resInv.InvList))
+
+	for i := range resInv.InvList {
+		sighting.InvVects[i] = *(resInv.InvList[i])
 	}
 
-	invC <- sightings
+	invC <- sighting
 }
 
 func (n *Node) Setup() error {
@@ -222,14 +216,30 @@ func exists(name string) bool {
 	return true
 }
 
-func (n *Node) writeInv(sightings []*invSighting) {
-	filePath := "/inv/" + n.Address
-
-	if !exists(filePath) {
-		os.Create(filePath)
+func (n *Node) createFiles() {
+	if !exists(n.txnFilePath()) {
+		os.Create(n.txnFilePath())
 	}
 
-	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0666)
+	if !exists(n.blockFilePath()) {
+		os.Create(n.blockFilePath())
+	}
+}
+
+func (n *Node) txnFilePath() string {
+	return n.outPath + "-txn"
+}
+
+func (n *Node) blockFilePath() string {
+	return n.outPath + "-block"
+}
+
+func (n *Node) writeInv(sighting *invSighting) {
+	if !exists(n.outPath) {
+		os.Create(n.outPath)
+	}
+
+	f, err := os.OpenFile(n.outPath, os.O_WRONLY, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -237,14 +247,17 @@ func (n *Node) writeInv(sightings []*invSighting) {
 	defer f.Close()
 
 	enc := gob.NewEncoder(f)
-	err = enc.Encode(sightings)
+	err = enc.Encode(sighting)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string) {
-	resultC := make(chan []*invSighting, 1)
+func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, dataDirName string) {
+	n.outPath = path.Join(dataDirName, n.Address)
+	n.createFiles()
+
+	resultC := make(chan *invSighting, 1)
 
 	if err := n.Setup(); err != nil {
 		return
@@ -261,10 +274,12 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string) {
 	nilCount := 0
 	for {
 		select {
+		case <-n.doneC:
+			return
 		case <-ticker.C:
 			progressC <- &watchProgress{address: n.Address, uniqueInvSeen: countProcessed}
-		case sightings := <-resultC:
-			if sightings == nil {
+		case sighting := <-resultC:
+			if sighting == nil {
 				if nilCount > 5 {
 					stopC <- n.Address
 					return
@@ -274,11 +289,19 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string) {
 				nilCount = 0
 			}
 
-			countProcessed += len(sightings)
 			go n.Inv(resultC)
-			n.writeInv(sightings)
+
+			if sighting != nil {
+				n.writeInv(sighting)
+				countProcessed += len(sighting.InvVects)
+			}
 		}
 	}
+}
+
+func (n *Node) StopWatching() {
+	n.doneC <- struct{}{}
+	return
 }
 
 func (n *Node) receiveMessageTimeout(command string) (wire.Message, error) {
@@ -361,6 +384,7 @@ func NewNode(addr string) *Node {
 	n.Address = addr
 	n.btcNet = wire.MainNet
 	n.PVer = wire.ProtocolVersion
+	n.doneC = make(chan struct{}, 1)
 
 	return n
 }

@@ -50,7 +50,7 @@ func processNode(n *Node) error {
 	return nil
 }
 
-func searcher(wg sync.WaitGroup, jobs <-chan *Node, results chan<- *Node) {
+func searcher(jobs <-chan *Node, results chan<- *Node) {
 	for n := range jobs {
 		err := processNode(n)
 
@@ -70,9 +70,9 @@ func (c *Crawler) assertReadyToStart() bool {
 	return true
 }
 
-func (c *Crawler) startWorkers(wg sync.WaitGroup) {
+func (c *Crawler) startWorkers() {
 	for i := 0; i < c.workers; i++ {
-		go searcher(wg, c.jobs, c.results)
+		go searcher(c.jobs, c.results)
 	}
 }
 
@@ -86,7 +86,7 @@ func (c *Crawler) printProgress(cp *crawlerProgress) {
 func (c *Crawler) crawl() {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	c.startWorkers(wg)
+	c.startWorkers()
 
 	finished := make(chan bool)
 
@@ -142,6 +142,7 @@ func (c *Crawler) crawl() {
 			stopRequested = true
 			c.Done = stopC
 		case <-finished:
+			log.Println("Crawler is finished...")
 			c.image.FinishedAt = time.Now()
 			close(c.jobs)
 			close(c.results)
