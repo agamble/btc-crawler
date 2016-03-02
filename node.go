@@ -255,7 +255,6 @@ func (n *Node) writeInv(sighting *invSighting) {
 
 func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, dataDirName string) {
 	n.outPath = path.Join(dataDirName, n.Address)
-	n.createFiles()
 
 	resultC := make(chan *invSighting, 1)
 

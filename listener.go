@@ -31,7 +31,7 @@ func (l *Listener) assertOutDirectory() {
 	now := time.Now()
 	l.dataDirName = "snapshot-" + now.Format(time.Stamp)
 
-	os.Mkdir(l.dataDirName, 0644)
+	os.Mkdir(l.dataDirName, 0777)
 }
 
 func (l *Listener) Listen() {
