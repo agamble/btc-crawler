@@ -239,7 +239,7 @@ func (n *Node) writeInv(sighting *invSighting) {
 		os.Create(n.outPath)
 	}
 
-	f, err := os.OpenFile(n.outPath, os.O_WRONLY, 0666)
+	f, err := os.OpenFile(n.outPath, os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		panic(err)
 	}
