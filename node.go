@@ -23,15 +23,18 @@ type Node struct {
 	btcNet    wire.BitcoinNet
 	Online    bool
 
-	sightings []*invSighting
-
 	doneC   chan struct{}
 	outPath string
 }
 
-type invSighting struct {
-	InvVects  []wire.InvVect
+type stampedInv struct {
+	InvVects  []*wire.InvVect
 	Timestamp time.Time
+}
+
+type stampedSighting struct {
+	Timestamp time.Time
+	InvVect   *wire.InvVect
 }
 
 func (n *Node) Connect() error {
@@ -164,33 +167,6 @@ func (n *Node) ReceiveMessage(command string) (wire.Message, error) {
 	return nil, errors.New("Failed to receive a message from node")
 }
 
-func (n *Node) Inv(invC chan<- *invSighting) {
-	res, err := n.ReceiveMessage("inv")
-	now := time.Now()
-
-	if err != nil {
-		invC <- nil
-		return
-	}
-
-	resInv, ok := res.(*wire.MsgInv)
-
-	if !ok {
-		invC <- nil
-		return
-	}
-
-	sighting := new(invSighting)
-	sighting.Timestamp = now
-	sighting.InvVects = make([]wire.InvVect, len(resInv.InvList))
-
-	for i := range resInv.InvList {
-		sighting.InvVects[i] = *(resInv.InvList[i])
-	}
-
-	invC <- sighting
-}
-
 func (n *Node) Setup() error {
 	err := n.Connect()
 
@@ -234,29 +210,60 @@ func (n *Node) blockFilePath() string {
 	return n.outPath + "-block"
 }
 
-func (n *Node) writeInv(sighting *invSighting) {
-	if !exists(n.outPath) {
-		os.Create(n.outPath)
-	}
+func (n *Node) InvWriter(node <-chan *stampedInv) {
+	n.createFiles()
 
-	f, err := os.OpenFile(n.outPath, os.O_WRONLY|os.O_APPEND, 0666)
+	txnFile, err := os.OpenFile(n.txnFilePath(), os.O_WRONLY|os.O_APPEND, 0666)
+	defer txnFile.Close()
+
 	if err != nil {
 		panic(err)
 	}
 
-	defer f.Close()
+	blkFile, err := os.OpenFile(n.blockFilePath(), os.O_WRONLY|os.O_APPEND, 0666)
+	defer blkFile.Close()
 
-	enc := gob.NewEncoder(f)
-	err = enc.Encode(sighting)
 	if err != nil {
 		panic(err)
+	}
+
+	txnEnc := gob.NewEncoder(txnFile)
+	blkEnc := gob.NewEncoder(blkFile)
+	stampedSighting := new(stampedSighting)
+
+	for {
+		stampedInvs, ok := <-node
+
+		if !ok {
+			return
+		}
+
+		stampedSighting.Timestamp = stampedInvs.Timestamp
+
+		for _, invVect := range stampedInvs.InvVects {
+			stampedSighting.InvVect = invVect
+			var err error
+			if invVect.Type == wire.InvTypeTx {
+				err = txnEnc.Encode(stampedSighting)
+			} else if invVect.Type == wire.InvTypeBlock {
+				err = blkEnc.Encode(stampedSighting)
+			}
+
+			if err != nil {
+				panic(err)
+			}
+		}
+
 	}
 }
 
 func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, dataDirName string) {
 	n.outPath = path.Join(dataDirName, n.Address)
 
-	resultC := make(chan *invSighting, 1)
+	resultC := make(chan *stampedInv, 1)
+
+	invWriterC := make(chan *stampedInv, 1)
+	go n.InvWriter(invWriterC)
 
 	if err := n.Setup(); err != nil {
 		return
@@ -277,8 +284,8 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, dataD
 			return
 		case <-ticker.C:
 			progressC <- &watchProgress{address: n.Address, uniqueInvSeen: countProcessed}
-		case sighting := <-resultC:
-			if sighting == nil {
+		case stampedInv := <-resultC:
+			if stampedInv == nil {
 				if nilCount > 5 {
 					stopC <- n.Address
 					return
@@ -290,12 +297,35 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, dataD
 
 			go n.Inv(resultC)
 
-			if sighting != nil {
-				n.writeInv(sighting)
-				countProcessed += len(sighting.InvVects)
+			if stampedInv != nil {
+				invWriterC <- stampedInv
+				countProcessed += len(stampedInv.InvVects)
 			}
 		}
 	}
+}
+
+func (n *Node) Inv(invC chan<- *stampedInv) {
+	res, err := n.ReceiveMessage("inv")
+	now := time.Now()
+
+	if err != nil {
+		invC <- nil
+		return
+	}
+
+	resInv, ok := res.(*wire.MsgInv)
+
+	if !ok {
+		invC <- nil
+		return
+	}
+
+	sighting := new(stampedInv)
+	sighting.Timestamp = now
+	sighting.InvVects = resInv.InvList[:]
+
+	invC <- sighting
 }
 
 func (n *Node) StopWatching() {
