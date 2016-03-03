@@ -4,9 +4,11 @@ import (
 	"encoding/gob"
 	"errors"
 	"github.com/btcsuite/btcd/wire"
+	"golang.org/x/net/proxy"
 	"io"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -37,16 +39,51 @@ type stampedSighting struct {
 	InvVect   *wire.InvVect
 }
 
+var onioncatrange = net.IPNet{IP: net.ParseIP("FD87:d87e:eb43::"),
+	Mask: net.CIDRMask(48, 128)}
+
+func Tor(na *wire.NetAddress) bool {
+	// bitcoind encodes a .onion address as a 16 byte number by decoding the
+	// address prior to the .onion (i.e. the key hash) base32 into a ten
+	// byte number. it then stores the first 6 bytes of the address as
+	// 0xfD, 0x87, 0xD8, 0x7e, 0xeb, 0x43
+	// this is the same range used by onioncat, part of the
+	// RFC4193 Unique local IPv6 range.
+	// In summary the format is:
+	// { magic 6 bytes, 10 bytes base32 decode of key hash }
+	return onioncatrange.Contains(na.IP)
+}
+
 func (n *Node) Connect() error {
-	conn, err := net.DialTimeout("tcp", n.Address, 30*time.Second)
+	if strings.Contains(n.Address, ".onion") {
+		tbProxyURL, err := url.Parse("socks5://127.0.0.1:9050")
 
-	if err != nil {
-		// log.Print("Connect error: ", err)
-		return err
+		if err != nil {
+			panic(err)
+		}
+
+		tbDialer, err := proxy.FromURL(tbProxyURL, proxy.Direct)
+		if err != nil {
+		}
+		conn, err := tbDialer.Dial("tcp", n.Address)
+		if err != nil {
+			// log.Print("Connect error: ", err)
+			return err
+		}
+
+		n.conn = conn
+		return nil
+	} else {
+		conn, err := net.DialTimeout("tcp", n.Address, 30*time.Second)
+
+		if err != nil {
+			// log.Print("Connect error: ", err)
+			return err
+		}
+
+		n.conn = conn
+		return nil
 	}
-
-	n.conn = conn
-	return nil
 }
 
 func (n *Node) TcpAddress() *net.TCPAddr {
@@ -406,6 +443,10 @@ func (n *Node) IsValid() bool {
 
 func NewSeed() *Node {
 	return NewNode("148.251.238.178:8333")
+}
+
+func NewTorSeed() *Node {
+	return NewNode("3ffk7iumtx3cegbi.onion:8333")
 }
 
 func NewNode(addr string) *Node {
