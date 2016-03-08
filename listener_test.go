@@ -1,7 +1,6 @@
-package crawler_test
+package main
 
 import (
-	"github.com/agamble/btc-crawler"
 	"github.com/btcsuite/btcd/wire"
 	"os"
 	"testing"
@@ -14,7 +13,7 @@ var staticTestDir string = "test-snapshot"
 // 	return crawler.NewImage(crawler.NewSeed())
 // }
 
-func NewStampedInv() *crawler.StampedInv {
+func NewStampedInv() *StampedInv {
 	var msg *wire.MsgInv
 	c := time.After(0 * time.Second)
 
@@ -25,7 +24,7 @@ func NewStampedInv() *crawler.StampedInv {
 		msg = NewInvTxMsg()
 	}
 
-	return &crawler.StampedInv{
+	return &StampedInv{
 		Timestamp: time.Now(),
 		InvVects:  msg.InvList,
 	}
@@ -48,14 +47,14 @@ func cleanupDirectory(dirName string) {
 }
 
 func TestWriteInvMessage(t *testing.T) {
-	node := crawler.NewSeed()
+	node := NewSeed()
 	node.ListenTxs = true
 	node.ListenBlks = true
 
 	tempDir := tempOutDirGenerator()
 	defer cleanupDirectory(tempDir())
 
-	invWriterC := make(chan *crawler.StampedInv, 1)
+	invWriterC := make(chan *StampedInv, 1)
 	go node.InvWriter(tempDir(), invWriterC)
 	defer close(invWriterC)
 
@@ -65,6 +64,6 @@ func TestWriteInvMessage(t *testing.T) {
 }
 
 func TestReadInvMessage(t *testing.T) {
-	decoder := crawler.NewDecoder(staticTestDir)
+	decoder := NewDecoder(staticTestDir)
 	decoder.Decode()
 }

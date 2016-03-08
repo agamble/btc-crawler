@@ -1,7 +1,6 @@
-package crawler_test
+package main
 
 import (
-	// "github.com/agamble/btc-crawler"
 	"github.com/btcsuite/btcd/wire"
 	"testing"
 )

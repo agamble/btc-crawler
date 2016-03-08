@@ -1,4 +1,4 @@
-package crawler
+package main
 
 import (
 	"log"
