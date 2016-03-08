@@ -1,4 +1,4 @@
-package main
+package crawler
 
 import (
 	"log"
@@ -170,6 +170,8 @@ func (c *Crawler) Start() {
 
 	seed := NewSeed()
 	c.jobs <- seed
+	onionSeed := NewTorSeed()
+	c.jobs <- onionSeed
 	c.image = NewImage(seed)
 
 	log.Println("Starting crawler")

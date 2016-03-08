@@ -1,4 +1,4 @@
-package main
+package crawler
 
 import (
 	"log"
@@ -14,6 +14,9 @@ type Listener struct {
 	duration    time.Duration
 	dataDirName string
 	DoneC       chan struct{}
+
+	ListenTxs  bool
+	ListenBlks bool
 }
 
 type watchProgress struct {
@@ -23,11 +26,20 @@ type watchProgress struct {
 
 func (l *Listener) startListeners() {
 	for _, node := range l.onlineNodes {
+
+		if l.ListenTxs {
+			node.ListenTxs = true
+		}
+
+		if l.ListenBlks {
+			node.ListenBlks = true
+		}
+
 		go node.Watch(l.progressC, l.closeC, l.dataDirName)
 	}
 }
 
-func (l *Listener) assertOutDirectory() {
+func (l *Listener) AssertOutDirectory() {
 	now := time.Now()
 	l.dataDirName = "snapshot-" + now.Format(time.Stamp)
 
@@ -35,7 +47,7 @@ func (l *Listener) assertOutDirectory() {
 }
 
 func (l *Listener) Listen() {
-	l.assertOutDirectory()
+	l.AssertOutDirectory()
 	l.startListeners()
 
 	finished := time.After(l.duration)
@@ -51,6 +63,10 @@ func (l *Listener) Listen() {
 				n.StopWatching()
 			}
 			l.DoneC <- struct{}{}
+			time.Sleep(5)
+			log.Println("Beginning decode process...")
+			dec := NewDecoder(l.dataDirName)
+			dec.Decode()
 			return
 		case <-logTicker.C:
 			l.printProgress()

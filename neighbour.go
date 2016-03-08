@@ -1,4 +1,4 @@
-package main
+package crawler
 
 type Neighbour struct {
 	SighterId uint `gorm:"primary_key"`
