@@ -6,6 +6,7 @@ package wire
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 )
 
@@ -60,6 +61,14 @@ func (hash *ShaHash) SetBytes(newHash []byte) error {
 // IsEqual returns true if target is the same as hash.
 func (hash *ShaHash) IsEqual(target *ShaHash) bool {
 	return *hash == *target
+}
+
+func (hash *ShaHash) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Hash string
+	}{
+		Hash: hash.String(),
+	})
 }
 
 // NewShaHash returns a new ShaHash from a byte slice.  An error is returned if
