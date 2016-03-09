@@ -63,7 +63,7 @@ func (n *Node) Connect() error {
 		}
 		n.conn = conn
 	} else {
-		conn, err := net.Dial("tcp", n.TcpAddr.String())
+		conn, err := net.DialTimeout("tcp", n.TcpAddr.String(), 30*time.Second)
 		if err != nil {
 			return err
 		}
