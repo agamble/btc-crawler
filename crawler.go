@@ -17,7 +17,7 @@ type Crawler struct {
 	image            *Image
 	Done             chan *Image
 
-	wg sync.WaitGroup
+	wg *sync.WaitGroup
 
 	// request stop through stop chan
 	stop chan chan *Image
@@ -102,8 +102,6 @@ func (c *Crawler) printProgress(cp *crawlerProgress) {
 }
 
 func (c *Crawler) crawl() {
-	wg := c.wg
-
 	c.startWorkers()
 
 	finished := make(chan bool)
@@ -119,7 +117,7 @@ func (c *Crawler) crawl() {
 	defer ticker.Stop()
 
 	go func() {
-		wg.Wait()
+		c.wg.Wait()
 		finished <- true
 	}()
 
@@ -137,6 +135,7 @@ func (c *Crawler) crawl() {
 		case result := <-c.results:
 			node := result.node
 			adjs := result.adjacents
+			// log.Println(adjs)
 
 			countProcessed++
 
@@ -154,15 +153,13 @@ func (c *Crawler) crawl() {
 
 					if !stopRequested {
 						c.jobs <- neighbour
-						wg.Add(1)
+						c.wg.Add(1)
 					}
 				}
-
 				node.Adjacents[i] = image.GetNode(addr)
-
 			}
 
-			wg.Done()
+			c.wg.Done()
 		case stopC := <-c.stop:
 			log.Println("Crawler is slowing down...")
 			stopRequested = true
@@ -189,10 +186,10 @@ func (c *Crawler) crawl() {
 
 func (c *Crawler) processAdjacents(adjs []*wire.NetAddress) []*net.TCPAddr {
 	tcpAddrs := make([]*net.TCPAddr, 0, len(adjs))
-	for _, adj := range tcpAddrs {
+	for _, adj := range adjs {
 		tcpAddrs = append(tcpAddrs, &net.TCPAddr{
 			IP:   adj.IP,
-			Port: adj.Port,
+			Port: int(adj.Port),
 		})
 	}
 	return tcpAddrs
@@ -238,6 +235,7 @@ func NewCrawler(workers int) *Crawler {
 	c.jobs = make(chan *Node, 1000000)
 	c.results = make(chan *jobResult)
 	c.Done = make(chan *Image)
-	c.wg = sync.WaitGroup{}
+	c.wg = &sync.WaitGroup{}
+
 	return c
 }

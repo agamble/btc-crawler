@@ -24,7 +24,7 @@ func DialTor(network string, tcpAddr *net.TCPAddr) (net.Conn, error) {
 	conn, err := dialer.Dial("tcp", IpToOnion(tcpAddr))
 
 	if err != nil {
-		log.Println("Tor dial error: ", err)
+		// log.Println("Tor dial error: ", err)
 		return nil, err
 	}
 

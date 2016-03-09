@@ -58,7 +58,7 @@ func (n *Node) Connect() error {
 		// Onion Address
 		conn, err := DialTor("tcp", n.TcpAddr)
 		if err != nil {
-			log.Println("Tor connect error: ", err)
+			// log.Println("Tor connect error: ", err)
 			return err
 		}
 		n.conn = conn
@@ -380,7 +380,7 @@ func (n *Node) GetAddr() ([]*wire.NetAddress, error) {
 	addrList := resAddrMsg.AddrList
 
 	// allocate the memory in advance!
-	n.Adjacents = make([]*Node, 0, len(addrList))
+	n.Adjacents = make([]*Node, len(addrList))
 
 	return addrList, nil
 }
