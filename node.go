@@ -4,23 +4,19 @@ import (
 	"encoding/gob"
 	"errors"
 	"github.com/btcsuite/btcd/wire"
-	"golang.org/x/net/proxy"
 	"io"
 	"log"
 	"net"
-	"net/url"
 	"os"
 	"path"
-	"strconv"
-	"strings"
 	"syscall"
 	"time"
 )
 
 type Node struct {
-	Address   string
+	TcpAddr   *net.TCPAddr
 	conn      net.Conn
-	adjacents []string
+	Adjacents []*Node
 	PVer      uint32
 	btcNet    wire.BitcoinNet
 	Online    bool
@@ -45,7 +41,7 @@ type StampedSighting struct {
 var onioncatrange = net.IPNet{IP: net.ParseIP("FD87:d87e:eb43::"),
 	Mask: net.CIDRMask(48, 128)}
 
-func Tor(na *wire.NetAddress) bool {
+func (n *Node) IsTorNode() bool {
 	// bitcoind encodes a .onion address as a 16 byte number by decoding the
 	// address prior to the .onion (i.e. the key hash) base32 into a ten
 	// byte number. it then stores the first 6 bytes of the address as
@@ -54,62 +50,27 @@ func Tor(na *wire.NetAddress) bool {
 	// RFC4193 Unique local IPv6 range.
 	// In summary the format is:
 	// { magic 6 bytes, 10 bytes base32 decode of key hash }
-	return onioncatrange.Contains(na.IP)
+	return onioncatrange.Contains(n.TcpAddr.IP)
 }
 
 func (n *Node) Connect() error {
-	if strings.Contains(n.Address, ".onion") {
-		tbProxyURL, err := url.Parse("socks5://127.0.0.1:9050")
-
+	if n.IsTorNode() {
+		// Onion Address
+		conn, err := DialTor("tcp", n.TcpAddr)
 		if err != nil {
-			panic(err)
-		}
-
-		tbDialer, err := proxy.FromURL(tbProxyURL, proxy.Direct)
-		if err != nil {
-		}
-		conn, err := tbDialer.Dial("tcp", n.Address)
-		if err != nil {
-			// log.Print("Connect error: ", err)
+			log.Println("Tor connect error: ", err)
 			return err
 		}
-
 		n.conn = conn
-		return nil
 	} else {
-		conn, err := net.DialTimeout("tcp", n.Address, 30*time.Second)
-
+		conn, err := net.Dial("tcp", n.TcpAddr.String())
 		if err != nil {
-			// log.Print("Connect error: ", err)
 			return err
 		}
-
 		n.conn = conn
-		return nil
-	}
-}
-
-func (n *Node) TcpAddress() *net.TCPAddr {
-	tcpAddr, err := net.ResolveTCPAddr("tcp", n.Address)
-	if err != nil {
-		panic(err)
-	}
-	return tcpAddr
-}
-
-func (n *Node) Neighbours() []string {
-	return n.adjacents
-}
-
-func (n *Node) convertNetAddress(addr *wire.NetAddress) string {
-	ipString := addr.IP.String()
-
-	if strings.Contains(ipString, ":") {
-		// ipv6
-		ipString = "[" + ipString + "]"
 	}
 
-	return ipString + ":" + strconv.Itoa(int(addr.Port))
+	return nil
 }
 
 func (n *Node) Handshake() error {
@@ -251,7 +212,7 @@ func (n *Node) blockFilePath() string {
 }
 
 func (n *Node) InvWriter(dataDirName string, node <-chan *StampedInv) {
-	n.outPath = path.Join(dataDirName, n.Address)
+	n.outPath = path.Join(dataDirName, n.String())
 
 	n.createFiles()
 
@@ -332,11 +293,11 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, dataD
 			close(invWriterC)
 			return
 		case <-ticker.C:
-			progressC <- &watchProgress{address: n.Address, uniqueInvSeen: countProcessed}
+			progressC <- &watchProgress{address: n.String(), uniqueInvSeen: countProcessed}
 		case stampedInv := <-resultC:
 			if stampedInv == nil {
 				if nilCount > 5 {
-					stopC <- n.Address
+					stopC <- n.String()
 					return
 				}
 				nilCount++
@@ -395,38 +356,33 @@ func (n *Node) receiveMessageTimeout(command string) (wire.Message, error) {
 	return msg, nil
 }
 
-func (n *Node) GetAddr() error {
+func (n *Node) GetAddr() ([]*wire.NetAddress, error) {
 	getAddrMsg := wire.NewMsgGetAddr()
 	err := wire.WriteMessage(n.conn, getAddrMsg, n.PVer, n.btcNet)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	res, err := n.receiveMessageTimeout("addr")
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if res == nil {
-		n.adjacents = make([]string, 0)
-		return nil
+		// return empty adjacents if we receive no response
+		return nil, nil
 	}
 
 	resAddrMsg := res.(*wire.MsgAddr)
 
 	addrList := resAddrMsg.AddrList
-	adjacents := make([]string, 0, 1000)
 
-	for _, addr := range addrList {
-		tcpAddr := n.convertNetAddress(addr)
-		adjacents = append(adjacents, tcpAddr)
-	}
+	// allocate the memory in advance!
+	n.Adjacents = make([]*Node, 0, len(addrList))
 
-	n.adjacents = adjacents
-
-	return nil
+	return addrList, nil
 }
 
 func (n *Node) Close() error {
@@ -442,11 +398,14 @@ func (n *Node) Close() error {
 	return nil
 }
 
+func (n *Node) String() string {
+	return n.TcpAddr.String()
+}
+
 func (n *Node) IsValid() bool {
-	tcpAddr := n.TcpAddress()
 
 	// obviously a port number of zero won't work
-	if tcpAddr.Port == 0 {
+	if n.TcpAddr.Port == 0 {
 		return false
 	}
 
@@ -454,16 +413,24 @@ func (n *Node) IsValid() bool {
 }
 
 func NewSeed() *Node {
-	return NewNode("148.251.238.178:8333")
+	return NewNode(&net.TCPAddr{
+		IP:   net.ParseIP("148.251.238.178"),
+		Port: 8333,
+	})
 }
 
 func NewTorSeed() *Node {
-	return NewNode("3ffk7iumtx3cegbi.onion:8333")
+	ip, _ := OnionToIp("h2vlpudzphzqxutd.onion:8333")
+	node := NewNode(&net.TCPAddr{
+		IP:   ip,
+		Port: 8333,
+	})
+	return node
 }
 
-func NewNode(addr string) *Node {
+func NewNode(tcpAddr *net.TCPAddr) *Node {
 	n := new(Node)
-	n.Address = addr
+	n.TcpAddr = tcpAddr
 	n.btcNet = wire.MainNet
 	n.PVer = wire.ProtocolVersion
 	n.doneC = make(chan struct{})

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net"
 	"time"
 )
 
@@ -20,18 +21,18 @@ func (i *Image) OnlineNodes() []*Node {
 
 func (i *Image) Add(node *Node) {
 	i.nodes = append(i.nodes, node)
-	i.seen[node.Address] = node
+	i.seen[node.String()] = node
 }
 
 func (i *Image) AddOnlineNode(node *Node) {
 	i.onlineNodes = append(i.onlineNodes, node)
 }
 
-func (i *Image) Has(nodeAddr string) bool {
-	return i.seen[nodeAddr] != nil
+func (i *Image) Has(tcpAddr *net.TCPAddr) bool {
+	return i.seen[tcpAddr.String()] != nil
 }
 
-func (i *Image) GetNodeFromAddr(nodeAddr string) *Node {
+func (i *Image) GetNodeFromString(nodeAddr string) *Node {
 	if i.seen[nodeAddr] != nil {
 		return i.seen[nodeAddr]
 	}
@@ -39,13 +40,16 @@ func (i *Image) GetNodeFromAddr(nodeAddr string) *Node {
 	return nil
 }
 
-func NewImage(seed *Node) *Image {
+func (i *Image) GetNode(tcpAddr *net.TCPAddr) *Node {
+	return i.GetNodeFromString(tcpAddr.String())
+}
+
+func NewImage() *Image {
 	i := new(Image)
 	// i.Seed = seed
 	i.StartedAt = time.Now()
 	i.nodes = make([]*Node, 0, 500000)
 	i.seen = make(map[string]*Node)
 	i.onlineNodes = make([]*Node, 0, 6000)
-	i.Add(seed)
 	return i
 }
