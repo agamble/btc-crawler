@@ -62,11 +62,11 @@ func (l *Listener) Listen() {
 			for _, n := range l.onlineNodes {
 				n.StopWatching()
 			}
-			l.DoneC <- struct{}{}
-			time.Sleep(5)
 			log.Println("Beginning decode process...")
+			time.Sleep(5)
 			dec := NewDecoder(l.dataDirName)
 			dec.Decode()
+			l.DoneC <- struct{}{}
 			return
 		case <-logTicker.C:
 			l.printProgress()
