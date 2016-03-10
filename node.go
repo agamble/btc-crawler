@@ -94,6 +94,7 @@ func (n *Node) Handshake() error {
 		return err
 	}
 
+	n.conn.SetDeadline(time.Now().Add(30 * time.Second))
 	err = wire.WriteMessage(n.conn, verMsg, n.PVer, n.btcNet)
 
 	if err != nil {
@@ -127,6 +128,7 @@ func (n *Node) pong(ping *wire.MsgPing) {
 	pongMsg := wire.NewMsgPong(ping.Nonce)
 
 	for i := 0; i < 2; i++ {
+		n.conn.SetDeadline(time.Now().Add(10 * time.Second))
 		err := wire.WriteMessage(n.conn, pongMsg, n.PVer, n.btcNet)
 
 		if err != nil {
@@ -364,6 +366,7 @@ func (n *Node) receiveMessageTimeout(command string) (wire.Message, error) {
 
 func (n *Node) GetAddr() ([]*wire.NetAddress, error) {
 	getAddrMsg := wire.NewMsgGetAddr()
+	n.conn.SetDeadline(time.Now().Add(30 * time.Second))
 	err := wire.WriteMessage(n.conn, getAddrMsg, n.PVer, n.btcNet)
 
 	if err != nil {
