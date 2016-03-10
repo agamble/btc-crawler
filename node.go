@@ -9,6 +9,8 @@ import (
 	"net"
 	"os"
 	"path"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -426,6 +428,30 @@ func NewTorSeed() *Node {
 		Port: 8333,
 	})
 	return node
+}
+
+func NewNodeFromString(addr string) *Node {
+	if strings.Contains(addr, ".onion") {
+		ip, err := OnionToIp(addr)
+		if err != nil {
+			panic(err)
+		}
+		port, err := strconv.Atoi(strings.Split(addr, ":")[1])
+		if err != nil {
+			panic(err)
+		}
+		return NewNode(&net.TCPAddr{
+			IP:   ip,
+			Port: port,
+		})
+	}
+
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		panic(err)
+	}
+
+	return NewNode(tcpAddr)
 }
 
 func NewNode(tcpAddr *net.TCPAddr) *Node {

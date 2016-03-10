@@ -1,11 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"github.com/btcsuite/btcd/wire"
 	"log"
 	"net"
+	"os"
 	"sync"
 	"time"
+)
+
+const (
+	SEED_FILE = "nodes_main.txt"
 )
 
 type Crawler struct {
@@ -210,18 +216,36 @@ func (c *Crawler) Start() {
 
 	c.image = NewImage()
 
-	seed := NewSeed()
-	onionSeed := NewTorSeed()
+	c.SeedCrawler()
 
-	c.add(seed)
-	c.add(onionSeed)
-
-	log.Println("Starting crawler")
+	log.Println("Starting crawler...")
 
 	go c.crawl()
 }
 
-// Stop will block until crawler has been killed
+func (c *Crawler) SeedCrawler() error {
+	log.Println("Seeding crawler...")
+	count := 0
+
+	file, err := os.Open(SEED_FILE)
+	if err != nil {
+		log.Println("Failed to open seed file...")
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		c.add(NewNodeFromString(scanner.Text()))
+		count++
+	}
+
+	log.Printf("Seeded crawler with %d nodes...\n", count)
+	return nil
+}
+
+// Sop will block until crawler has been killed
 func (c *Crawler) Stop() {
 	imageC := make(chan *Image)
 	c.stop <- imageC
