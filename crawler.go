@@ -22,6 +22,7 @@ type Crawler struct {
 	workers          int
 	image            *Image
 	Done             chan *Image
+	countActive      int
 
 	wg *sync.WaitGroup
 
@@ -106,6 +107,7 @@ func (c *Crawler) startWorkers() {
 func (c *Crawler) printProgress(cp *crawlerProgress) {
 	log.Println("#### Crawler Progress ####")
 	log.Printf("Count Processed: %d", cp.countProcessed)
+	log.Printf("Count Active: %d", c.countActive)
 	log.Printf("Count Onion: %d", cp.countOnion)
 	log.Printf("Count Ipv4: %d", cp.countIpv4)
 	log.Printf("Count Ipv6: %d", cp.countIpv6)
@@ -179,12 +181,14 @@ func (c *Crawler) crawl() {
 					if !stopRequested {
 						c.jobs <- neighbour
 						c.wg.Add(1)
+						c.countActive++
 					}
 				}
 				node.Adjacents[i] = image.GetNode(addr)
 			}
 
 			c.wg.Done()
+			c.countActive--
 		case stopC := <-c.stop:
 			log.Println("Crawler is slowing down...")
 			stopRequested = true
@@ -197,6 +201,9 @@ func (c *Crawler) crawl() {
 			c.printProgress(&crawlerProgress{
 				countProcessed: countProcessed,
 				countOnline:    countOnline,
+				countOnion:     countOnion,
+				countIpv6:      countIpv6,
+				countIpv4:      countIpv4,
 				countOffline:   countProcessed - countOnline,
 				jobs:           len(c.jobs),
 				done:           false,
@@ -234,17 +241,13 @@ func (c *Crawler) Start() {
 	}
 
 	c.image = NewImage()
-
 	c.SeedCrawler()
-
 	log.Println("Starting crawler...")
-
 	go c.crawl()
 }
 
 func (c *Crawler) SeedCrawler() error {
 	log.Println("Seeding crawler...")
-	count := 0
 
 	file, err := os.Open(SEED_FILE)
 	if err != nil {
@@ -257,10 +260,10 @@ func (c *Crawler) SeedCrawler() error {
 
 	for scanner.Scan() {
 		c.add(NewNodeFromString(scanner.Text()))
-		count++
+		c.countActive++
 	}
 
-	log.Printf("Seeded crawler with %d nodes...\n", count)
+	log.Printf("Seeded crawler with %d nodes...\n", c.countActive)
 	return nil
 }
 
