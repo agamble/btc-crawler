@@ -14,6 +14,8 @@ func (d *Dispatcher) BuildImage(workers int) *Image {
 	image := <-crawler.Done
 
 	listener := NewListener(image, 24*time.Hour)
+	listener.ListenBlks = true
+
 	go listener.Listen()
 	<-listener.DoneC
 
