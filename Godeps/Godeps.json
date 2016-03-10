@@ -12,27 +12,8 @@
 			"Rev": "302ad4db268b46f9ebda3078f6f7397f96047735"
 		},
 		{
-			"ImportPath": "github.com/jinzhu/gorm",
-			"Rev": "c7b9acefb7d4570e0f46d94ce453467cc486d8fd"
-		},
-		{
-			"ImportPath": "github.com/jinzhu/inflection",
-			"Rev": "3272df6c21d04180007eb3349844c89a3856bc25"
-		},
-		{
-			"ImportPath": "github.com/lib/pq",
-			"Comment": "go1.0-cutoff-74-g8ad2b29",
-			"Rev": "8ad2b298cadd691a77015666a5372eae5dbfac8f"
-		},
-		{
-			"ImportPath": "github.com/lib/pq/hstore",
-			"Comment": "go1.0-cutoff-74-g8ad2b29",
-			"Rev": "8ad2b298cadd691a77015666a5372eae5dbfac8f"
-		},
-		{
-			"ImportPath": "github.com/lib/pq/oid",
-			"Comment": "go1.0-cutoff-74-g8ad2b29",
-			"Rev": "8ad2b298cadd691a77015666a5372eae5dbfac8f"
+			"ImportPath": "golang.org/x/net/proxy",
+			"Rev": "ea47fc708ee3e20177f3ca3716217c4ab75942cb"
 		}
 	]
 }

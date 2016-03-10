@@ -31,6 +31,9 @@ type Crawler struct {
 
 type crawlerProgress struct {
 	countProcessed int
+	countOnion     int
+	countIpv6      int
+	countIpv4      int
 	countOnline    int
 	countOffline   int
 	jobs           int
@@ -103,7 +106,10 @@ func (c *Crawler) startWorkers() {
 func (c *Crawler) printProgress(cp *crawlerProgress) {
 	log.Println("#### Crawler Progress ####")
 	log.Printf("Count Processed: %d", cp.countProcessed)
-	log.Printf("Count Online: %d", cp.countOnline)
+	log.Printf("Count Onion: %d", cp.countOnion)
+	log.Printf("Count Ipv4: %d", cp.countIpv4)
+	log.Printf("Count Ipv6: %d", cp.countIpv6)
+	log.Printf("Total Online: %d", cp.countOnline)
 	log.Printf("Jobs Available: %d", cp.jobs)
 }
 
@@ -114,6 +120,9 @@ func (c *Crawler) crawl() {
 
 	countProcessed := 0
 	countOnline := 0
+	countIpv4 := 0
+	countIpv6 := 0
+	countOnion := 0
 
 	image := c.image
 	stopRequested := false
@@ -132,6 +141,9 @@ func (c *Crawler) crawl() {
 		case <-ticker.C:
 			c.printProgress(&crawlerProgress{
 				countProcessed: countProcessed,
+				countOnion:     countOnion,
+				countIpv6:      countIpv6,
+				countIpv4:      countIpv4,
 				countOnline:    countOnline,
 				countOffline:   countProcessed - countOnline,
 				jobs:           len(c.jobs),
@@ -148,6 +160,13 @@ func (c *Crawler) crawl() {
 			if node.Online {
 				image.AddOnlineNode(node)
 				countOnline++
+				if node.IsTorNode() {
+					countOnion++
+				} else if node.IsIpv6() {
+					countIpv6++
+				} else {
+					countIpv4++
+				}
 			}
 
 			tcpAdjs := c.processAdjacents(adjs)

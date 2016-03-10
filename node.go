@@ -55,6 +55,10 @@ func (n *Node) IsTorNode() bool {
 	return onioncatrange.Contains(n.TcpAddr.IP)
 }
 
+func (n *Node) IsIpv6() bool {
+	return n.TcpAddr.IP.To4() == nil
+}
+
 func (n *Node) Connect() error {
 	if n.IsTorNode() {
 		// Onion Address
