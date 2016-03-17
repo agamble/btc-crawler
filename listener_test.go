@@ -47,7 +47,7 @@ func cleanupDirectory(dirName string) {
 }
 
 func TestWriteInvMessage(t *testing.T) {
-	node := NewSeed()
+	node := NewNodeFromString("192.168.1.1:8333")
 	node.ListenTxs = true
 	node.ListenBlks = true
 

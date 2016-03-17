@@ -90,8 +90,8 @@ func (i *Image) MarshalJSON() ([]byte, error) {
 		OnionCount:   i.OnionCount,
 		IPv4Count:    i.Ipv4Count,
 		IPv6Count:    i.Ipv6Count,
-		OfflineNodes: i.onlineNodes,
-		OnlineNodes:  i.offlineNodes,
+		OfflineNodes: i.offlineNodes,
+		OnlineNodes:  i.onlineNodes,
 	})
 }
 
@@ -99,8 +99,8 @@ func NewImage() *Image {
 	i := new(Image)
 	// i.Seed = seed
 	i.StartedAt = time.Now()
-	i.offlineNodes = make([]*Node, 0, 500000)
 	i.seen = make(map[string]*Node)
+	i.offlineNodes = make([]*Node, 0, 500000)
 	i.onlineNodes = make([]*Node, 0, 6000)
 	return i
 }
