@@ -12,6 +12,7 @@ func (d *Dispatcher) BuildImage(workers int) *Image {
 
 	crawler.Start()
 	image := <-crawler.Done
+	image.Save()
 
 	listener := NewListener(image, 24*time.Hour)
 	listener.ListenBlks = true

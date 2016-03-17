@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"github.com/btcsuite/btcd/wire"
 	"io"
@@ -22,6 +23,9 @@ type Node struct {
 	PVer      uint32
 	btcNet    wire.BitcoinNet
 	Online    bool
+	Onion     bool
+	Services  uint64
+	UserAgent string
 
 	doneC   chan struct{}
 	outPath string
@@ -115,12 +119,11 @@ func (n *Node) Handshake() error {
 		log.Print("Something failed getting version")
 	}
 
-	pVer := resVer.ProtocolVersion
-	n.receiveMessageTimeout("verack")
+	n.PVer = uint32(resVer.ProtocolVersion)
+	n.UserAgent = resVer.UserAgent
+	n.Services = uint64(resVer.Services)
 
-	if pVer < int32(n.PVer) {
-		n.PVer = uint32(pVer)
-	}
+	n.receiveMessageTimeout("verack")
 
 	return nil
 }
@@ -425,20 +428,30 @@ func (n *Node) IsValid() bool {
 	return true
 }
 
-func NewSeed() *Node {
-	return NewNode(&net.TCPAddr{
-		IP:   net.ParseIP("148.251.238.178"),
-		Port: 8333,
-	})
-}
+func (n *Node) MarshalJSON() ([]byte, error) {
+	adjsStrs := make([]string, len(n.Adjacents))
 
-func NewTorSeed() *Node {
-	ip, _ := OnionToIp("h2vlpudzphzqxutd.onion:8333")
-	node := NewNode(&net.TCPAddr{
-		IP:   ip,
-		Port: 8333,
+	for i, adj := range n.Adjacents {
+		adjsStrs[i] = adj.String()
+	}
+
+	return json.Marshal(struct {
+		Address   string
+		Adjacents []string
+		PVer      uint32
+		Online    bool
+		Onion     bool
+		Services  uint64
+		UserAgent string
+	}{
+		Address:   n.TcpAddr.String(),
+		Adjacents: adjsStrs,
+		PVer:      n.PVer,
+		Onion:     n.Onion,
+		Online:    n.Online,
+		Services:  n.Services,
+		UserAgent: n.UserAgent,
 	})
-	return node
 }
 
 func NewNodeFromString(addr string) *Node {

@@ -164,11 +164,14 @@ func (c *Crawler) crawl() {
 				countOnline++
 				if node.IsTorNode() {
 					countOnion++
+					node.Onion = true
 				} else if node.IsIpv6() {
 					countIpv6++
 				} else {
 					countIpv4++
 				}
+			} else {
+				image.AddOfflineNode(node)
 			}
 
 			tcpAdjs := c.processAdjacents(adjs)
@@ -206,9 +209,12 @@ func (c *Crawler) crawl() {
 				countIpv4:      countIpv4,
 				countOffline:   countProcessed - countOnline,
 				jobs:           len(c.jobs),
-				done:           false,
+				done:           true,
 				stopped:        stopRequested,
 			})
+			image.Ipv4Count = countIpv4
+			image.Ipv6Count = countIpv6
+			image.OnionCount = countOnion
 			c.Done <- image
 			return
 		}
