@@ -482,7 +482,6 @@ func NewNode(tcpAddr *net.TCPAddr) *Node {
 	n := new(Node)
 	n.TcpAddr = tcpAddr
 	n.btcNet = wire.MainNet
-	n.PVer = wire.ProtocolVersion
 	n.doneC = make(chan struct{}, 1)
 
 	return n
