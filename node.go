@@ -146,7 +146,7 @@ func (n *Node) pong(ping *wire.MsgPing) {
 	}
 }
 
-func (n *Node) ReceiveMessage(command string) (wire.Message, error) {
+func (n *Node) ReceiveMessage(commands []string) (wire.Message, error) {
 	for i := 0; i < 50; i++ {
 		msg, _, err := wire.ReadMessage(n.conn, n.PVer, n.btcNet)
 
@@ -174,8 +174,10 @@ func (n *Node) ReceiveMessage(command string) (wire.Message, error) {
 			continue
 		}
 
-		if command == msg.Command() {
-			return msg, nil
+		for _, command := range commands {
+			if command == msg.Command() {
+				return msg, nil
+			}
 		}
 	}
 
@@ -281,7 +283,7 @@ func (n *Node) WriteInv(txnEnc *gob.Encoder, blkEnc *gob.Encoder, stampedSightin
 	}
 }
 
-func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, dataDirName string) {
+func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, addrC chan<- []*wire.NetAddress, dataDirName string) {
 
 	resultC := make(chan *StampedInv, 1)
 
@@ -296,7 +298,7 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, dataD
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
-	go n.Inv(resultC)
+	go n.Inv(resultC, addrC)
 
 	countProcessed := 0
 
@@ -319,7 +321,7 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, dataD
 				nilCount = 0
 			}
 
-			go n.Inv(resultC)
+			go n.Inv(resultC, addrC)
 
 			if stampedInv != nil {
 				invWriterC <- stampedInv
@@ -329,8 +331,8 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, dataD
 	}
 }
 
-func (n *Node) Inv(invC chan<- *StampedInv) {
-	res, err := n.ReceiveMessage("inv")
+func (n *Node) Inv(invC chan<- *StampedInv, addrC chan<- []*wire.NetAddress) {
+	res, err := n.ReceiveMessage([]string{"inv", "addr"})
 	now := time.Now()
 
 	if err != nil {
@@ -338,18 +340,19 @@ func (n *Node) Inv(invC chan<- *StampedInv) {
 		return
 	}
 
-	resInv, ok := res.(*wire.MsgInv)
+	switch res := res.(type) {
+	case *wire.MsgInv:
+		sighting := new(StampedInv)
+		sighting.Timestamp = now
+		sighting.InvVects = res.InvList[:]
 
-	if !ok {
+		invC <- sighting
+	case *wire.MsgAddr:
+		addrC <- res.AddrList
+	default:
 		invC <- nil
-		return
 	}
 
-	sighting := new(StampedInv)
-	sighting.Timestamp = now
-	sighting.InvVects = resInv.InvList[:]
-
-	invC <- sighting
 }
 
 func (n *Node) StopWatching() {
@@ -361,7 +364,7 @@ func (n *Node) receiveMessageTimeout(command string) (wire.Message, error) {
 	n.conn.SetReadDeadline(time.Time(time.Now().Add(30 * time.Second)))
 	defer n.conn.SetReadDeadline(time.Time{})
 
-	msg, err := n.ReceiveMessage(command)
+	msg, err := n.ReceiveMessage([]string{command})
 
 	if err != nil {
 		return nil, err
