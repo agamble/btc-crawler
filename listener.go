@@ -9,7 +9,7 @@ import (
 )
 
 type Listener struct {
-	status      map[string]int
+	status      map[string]*nodeStatus
 	closeC      chan string
 	addrC       chan []*wire.NetAddress
 	progressC   chan *watchProgress
@@ -20,6 +20,11 @@ type Listener struct {
 
 	ListenTxs  bool
 	ListenBlks bool
+}
+
+type nodeStatus struct {
+	CountSeen int
+	Active    bool
 }
 
 type watchProgress struct {
@@ -44,7 +49,10 @@ func (l *Listener) startListeners() {
 
 func (l *Listener) initialiseStatusMap() {
 	for _, n := range l.onlineNodes {
-		l.status[n.String()] = 0
+		l.status[n.String()] = &nodeStatus{
+			Active:    false,
+			CountSeen: 0,
+		}
 	}
 }
 
@@ -62,6 +70,27 @@ func NetAddrToTcpAddr(netAddr *wire.NetAddress) *net.TCPAddr {
 	}
 }
 
+func (l *Listener) processNewAddrs(netAddrs []*wire.NetAddress) {
+	for _, netAddr := range netAddrs {
+		addrStr := NetAddrToTcpAddr(netAddr).String()
+
+		if l.status[addrStr] == nil {
+			l.status[addrStr] = &nodeStatus{
+				CountSeen: 0,
+				Active:    false,
+			}
+			log.Printf("New node discovered!", addrStr)
+		}
+
+		if !l.status[addrStr].Active {
+			n := NewNodeFromString(addrStr)
+			l.status[addrStr].Active = true
+			go n.Watch(l.progressC, l.closeC, l.addrC, l.dataDirName)
+			log.Printf("Tried to start new connection to... %s", addrStr)
+		}
+	}
+}
+
 func (l *Listener) Listen() {
 	l.AssertOutDirectory()
 	l.startListeners()
@@ -74,14 +103,7 @@ func (l *Listener) Listen() {
 	for {
 		select {
 		case netAddrs := <-l.addrC:
-			for _, netAddr := range netAddrs {
-				addr := NetAddrToTcpAddr(netAddr)
-				if l.status[addr.String()] == -1 {
-					n := NewNode(addr)
-					go n.Watch(l.progressC, l.closeC, l.addrC, l.dataDirName)
-					log.Printf("Tried to start new connection to... %s", addr.String())
-				}
-			}
+			l.processNewAddrs(netAddrs)
 		case <-finished:
 			log.Println("Finished time period of listening...")
 			for _, n := range l.onlineNodes {
@@ -96,9 +118,9 @@ func (l *Listener) Listen() {
 		case <-logTicker.C:
 			l.printProgress()
 		case progress := <-l.progressC:
-			l.status[progress.address] = progress.uniqueInvSeen
+			l.status[progress.address].CountSeen = progress.uniqueInvSeen
 		case address := <-l.closeC:
-			l.status[address] = -1
+			l.status[address].Active = false
 			log.Printf("Lost connection with %s", address)
 		}
 	}
@@ -108,10 +130,8 @@ func (l *Listener) printProgress() {
 	sum := 0
 	nodes := 0
 	for _, m := range l.status {
-		if m != -1 {
-			sum += m
-			nodes++
-		}
+		sum += m.CountSeen
+		nodes++
 	}
 	var average int
 	if nodes > 0 {
@@ -128,7 +148,7 @@ func NewListener(image *Image, duration time.Duration) *Listener {
 	l.progressC = make(chan *watchProgress)
 	l.closeC = make(chan string)
 	l.DoneC = make(chan struct{})
-	l.status = make(map[string]int)
+	l.status = make(map[string]*nodeStatus)
 	l.addrC = make(chan []*wire.NetAddress)
 
 	l.onlineNodes = image.OnlineNodes()
