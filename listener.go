@@ -79,7 +79,7 @@ func (l *Listener) processNewAddrs(netAddrs []*wire.NetAddress) {
 				CountSeen: 0,
 				Active:    false,
 			}
-			log.Printf("New node discovered!", addrStr)
+			log.Printf("New node discovered! %s", addrStr)
 		}
 
 		if !l.status[addrStr].Active {
@@ -94,6 +94,7 @@ func (l *Listener) processNewAddrs(netAddrs []*wire.NetAddress) {
 func (l *Listener) Listen() {
 	l.AssertOutDirectory()
 	l.startListeners()
+	l.initialiseStatusMap()
 
 	finished := time.After(l.duration)
 
