@@ -293,6 +293,7 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, addrC
 	go n.InvWriter(dataDirName, invWriterC)
 
 	if err := n.Setup(); err != nil {
+		stopC <- n.String()
 		return
 	}
 
