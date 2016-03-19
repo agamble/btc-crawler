@@ -288,6 +288,8 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, addrC
 	resultC := make(chan *StampedInv, 1)
 
 	invWriterC := make(chan *StampedInv, 1)
+	defer close(invWriterC)
+
 	go n.InvWriter(dataDirName, invWriterC)
 
 	if err := n.Setup(); err != nil {
@@ -306,7 +308,6 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, addrC
 	for {
 		select {
 		case <-n.doneC:
-			close(invWriterC)
 			return
 		case <-ticker.C:
 			progressC <- &watchProgress{address: n.String(), uniqueInvSeen: countProcessed}
@@ -345,10 +346,10 @@ func (n *Node) Inv(invC chan<- *StampedInv, addrC chan<- []*wire.NetAddress) {
 		sighting := new(StampedInv)
 		sighting.Timestamp = now
 		sighting.InvVects = res.InvList[:]
-
 		invC <- sighting
 	case *wire.MsgAddr:
 		addrC <- res.AddrList
+		invC <- nil
 	default:
 		invC <- nil
 	}

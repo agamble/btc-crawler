@@ -132,7 +132,9 @@ func (l *Listener) printProgress() {
 	nodes := 0
 	for _, m := range l.status {
 		sum += m.CountSeen
-		nodes++
+		if m.CountSeen != 0 {
+			nodes++
+		}
 	}
 	var average int
 	if nodes > 0 {
