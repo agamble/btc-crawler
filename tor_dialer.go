@@ -13,7 +13,7 @@ const (
 	PROXY_ADDR = "127.0.0.1:9050"
 )
 
-// Dial to address through Tor
+// DialTor will dial an IP address through Tor.
 func DialTor(network string, tcpAddr *net.TCPAddr) (net.Conn, error) {
 	dialer, err := proxy.SOCKS5("tcp", PROXY_ADDR, nil, proxy.Direct)
 
@@ -32,7 +32,7 @@ func DialTor(network string, tcpAddr *net.TCPAddr) (net.Conn, error) {
 	return conn, nil
 }
 
-// Assert Tor is running
+// TorUp asserts Tor is running.
 func TorUp() bool {
 	_, err := proxy.SOCKS5("tcp", PROXY_ADDR, nil, proxy.Direct)
 
@@ -45,7 +45,7 @@ func TorUp() bool {
 	return true
 }
 
-// Convert an onion string address to an IP address struct
+// OnionToIP converts an onion string address to an IP address struct
 func OnionToIp(address string) (net.IP, error) {
 	cleanedAddr := strings.ToUpper(strings.Split(address, ".onion")[0])
 	tail, err := base32.StdEncoding.DecodeString(cleanedAddr)
@@ -56,7 +56,7 @@ func OnionToIp(address string) (net.IP, error) {
 	return tail, nil
 }
 
-// Convert an IP address struct to an onion address string
+// IpToOnion converts an IP address struct to an onion address string.
 func IpToOnion(tcpAddr *net.TCPAddr) string {
 	onionData := strings.ToLower(base32.StdEncoding.EncodeToString(tcpAddr.IP[6:]))
 	return onionData + ".onion:" + fmt.Sprintf("%d", tcpAddr.Port)

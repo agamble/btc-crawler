@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>main - The Go Programming Language</title>
+
+<link type="text/css" rel="stylesheet" href="/lib/godoc/style.css">
+
+<link rel="stylesheet" href="/lib/godoc/jquery.treeview.css">
+<script type="text/javascript">window.initFuncs = [];</script>
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="/">The Go Programming Language</a></div>
+<div class="top-heading" id="heading-narrow"><a href="/">Go</a></div>
+<a href="#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+<form method="GET" action="/search">
+<div id="menu">
+<a href="/doc/">Documents</a>
+<a href="/pkg/">Packages</a>
+<a href="/project/">The Project</a>
+<a href="/help/">Help</a>
+<a href="/blog/">Blog</a>
+
+<input type="text" id="search" name="q" class="inactive" value="Search" placeholder="Search">
+</div>
+</form>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>Package main</h1>
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script type='text/javascript'>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "github.com/agamble/btc-crawler"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+				<dd><a href="#pkg-subdirectories">Subdirectories</a></dd>
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				<p>
+This package describes the Bitcoin network crawler.
+The program&#39;s main entry point is in main.go, although the logic to dictate the running order of the crawler and listener is located in dispatcher.go
+</p>
+
+			</div>
+		</div>
+		
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+				<dd><a href="#pkg-constants">Constants</a></dd>
+			
+			
+			
+				
+				<dd><a href="#DialTor">func DialTor(network string, tcpAddr *net.TCPAddr) (net.Conn, error)</a></dd>
+			
+				
+				<dd><a href="#IpToOnion">func IpToOnion(tcpAddr *net.TCPAddr) string</a></dd>
+			
+				
+				<dd><a href="#NetAddrToTcpAddr">func NetAddrToTcpAddr(netAddr *wire.NetAddress) *net.TCPAddr</a></dd>
+			
+				
+				<dd><a href="#OnionToIp">func OnionToIp(address string) (net.IP, error)</a></dd>
+			
+				
+				<dd><a href="#TorUp">func TorUp() bool</a></dd>
+			
+			
+				
+				<dd><a href="#Crawler">type Crawler</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewCrawler">func NewCrawler(workers int) *Crawler</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Crawler.SeedCrawler">func (c *Crawler) SeedCrawler() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Crawler.Start">func (c *Crawler) Start()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Crawler.Stop">func (c *Crawler) Stop()</a></dd>
+				
+			
+				
+				<dd><a href="#Decoder">type Decoder</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewDecoder">func NewDecoder(dir string) *Decoder</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Decoder.Decode">func (d *Decoder) Decode()</a></dd>
+				
+			
+				
+				<dd><a href="#Dispatcher">type Dispatcher</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewDispatcher">func NewDispatcher() *Dispatcher</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Dispatcher.BuildImage">func (d *Dispatcher) BuildImage(workers int) *Image</a></dd>
+				
+			
+				
+				<dd><a href="#Image">type Image</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewImage">func NewImage() *Image</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Image.Add">func (i *Image) Add(node *Node)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Image.AddOfflineNode">func (i *Image) AddOfflineNode(node *Node)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Image.AddOnlineNode">func (i *Image) AddOnlineNode(node *Node)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Image.GetNode">func (i *Image) GetNode(tcpAddr *net.TCPAddr) *Node</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Image.GetNodeFromString">func (i *Image) GetNodeFromString(nodeAddr string) *Node</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Image.Has">func (i *Image) Has(tcpAddr *net.TCPAddr) bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Image.MarshalJSON">func (i *Image) MarshalJSON() ([]byte, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Image.OnlineNodes">func (i *Image) OnlineNodes() []*Node</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Image.Save">func (i *Image) Save()</a></dd>
+				
+			
+				
+				<dd><a href="#Listener">type Listener</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewListener">func NewListener(image *Image, duration time.Duration) *Listener</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Listener.AssertOutDirectory">func (l *Listener) AssertOutDirectory()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Listener.Listen">func (l *Listener) Listen()</a></dd>
+				
+			
+				
+				<dd><a href="#Node">type Node</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewNode">func NewNode(tcpAddr *net.TCPAddr) *Node</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#NewNodeFromString">func NewNodeFromString(addr string) *Node</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.Close">func (n *Node) Close() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.Connect">func (n *Node) Connect() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.GetAddr">func (n *Node) GetAddr() ([]*wire.NetAddress, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.Handshake">func (n *Node) Handshake() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.Inv">func (n *Node) Inv(invC chan&lt;- *StampedInv, addrC chan&lt;- []*wire.NetAddress)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.InvWriter">func (n *Node) InvWriter(dataDirName string, node &lt;-chan *StampedInv)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.IsIpv6">func (n *Node) IsIpv6() bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.IsTorNode">func (n *Node) IsTorNode() bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.IsValid">func (n *Node) IsValid() bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.MarshalJSON">func (n *Node) MarshalJSON() ([]byte, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.ReceiveMessage">func (n *Node) ReceiveMessage(commands []string) (wire.Message, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.Setup">func (n *Node) Setup() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.StopWatching">func (n *Node) StopWatching()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.String">func (n *Node) String() string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.Watch">func (n *Node) Watch(progressC chan&lt;- *watchProgress, stopC chan&lt;- string, addrC chan&lt;- []*wire.NetAddress, dataDirName string)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Node.WriteInv">func (n *Node) WriteInv(txnEnc *gob.Encoder, blkEnc *gob.Encoder, stampedSightingHolder *StampedSighting, stampedInvs *StampedInv)</a></dd>
+				
+			
+				
+				<dd><a href="#StampedInv">type StampedInv</a></dd>
+				
+				
+			
+				
+				<dd><a href="#StampedSighting">type StampedSighting</a></dd>
+				
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h4>Package files</h4>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="/src/github.com/agamble/btc-crawler/crawler.go">crawler.go</a>
+			
+				<a href="/src/github.com/agamble/btc-crawler/decoder.go">decoder.go</a>
+			
+				<a href="/src/github.com/agamble/btc-crawler/dispatcher.go">dispatcher.go</a>
+			
+				<a href="/src/github.com/agamble/btc-crawler/image.go">image.go</a>
+			
+				<a href="/src/github.com/agamble/btc-crawler/listener.go">listener.go</a>
+			
+				<a href="/src/github.com/agamble/btc-crawler/main.go">main.go</a>
+			
+				<a href="/src/github.com/agamble/btc-crawler/node.go">node.go</a>
+			
+				<a href="/src/github.com/agamble/btc-crawler/tor_dialer.go">tor_dialer.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		<div id="pkg-callgraph" class="toggle" style="display: none">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Internal Call Graph section">Internal call graph ▹</h2>
+		</div> <!-- .expanded -->
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Internal Call Graph section">Internal call graph ▾</h2>
+			<p>
+			  In the call graph viewer below, each node
+			  is a function belonging to this package
+			  and its children are the functions it
+			  calls&mdash;perhaps dynamically.
+			</p>
+			<p>
+			  The root nodes are the entry points of the
+			  package: functions that may be called from
+			  outside the package.
+			  There may be non-exported or anonymous
+			  functions among them if they are called
+			  dynamically from another package.
+			</p>
+			<p>
+			  Click a node to visit that function's source code.
+			  From there you can visit its callers by
+			  clicking its declaring <code>func</code>
+			  token.
+			</p>
+			<p>
+			  Functions may be omitted if they were
+			  determined to be unreachable in the
+			  particular programs or tests that were
+			  analyzed.
+			</p>
+			<!-- Zero means show all package entry points. -->
+			<ul style="margin-left: 0.5in" id="callgraph-0" class="treeview"></ul>
+		</div>
+		</div> <!-- #pkg-callgraph -->
+
+		
+			<h2 id="pkg-constants">Constants</h2>
+			
+				<pre>const (
+    <span id="PROXY_ADDR">PROXY_ADDR</span> = &#34;127.0.0.1:9050&#34;
+)</pre>
+				
+			
+				<pre>const (
+    <span id="SEED_FILE">SEED_FILE</span> = &#34;nodes_main.txt&#34;
+)</pre>
+				
+			
+		
+		
+		
+			
+			
+			<h2 id="DialTor">func <a href="/src/github.com/agamble/btc-crawler/tor_dialer.go?s=193:261#L7">DialTor</a></h2>
+			<pre>func DialTor(network <a href="/pkg/builtin/#string">string</a>, tcpAddr *<a href="/pkg/net/">net</a>.<a href="/pkg/net/#TCPAddr">TCPAddr</a>) (<a href="/pkg/net/">net</a>.<a href="/pkg/net/#Conn">Conn</a>, <a href="/pkg/builtin/#error">error</a>)</pre>
+			<p>
+DialTor will dial an IP address through Tor.
+</p>
+
+			
+			
+
+		
+			
+			
+			<h2 id="IpToOnion">func <a href="/src/github.com/agamble/btc-crawler/tor_dialer.go?s=1261:1304#L50">IpToOnion</a></h2>
+			<pre>func IpToOnion(tcpAddr *<a href="/pkg/net/">net</a>.<a href="/pkg/net/#TCPAddr">TCPAddr</a>) <a href="/pkg/builtin/#string">string</a></pre>
+			<p>
+IpToOnion converts an IP address struct to an onion address string.
+</p>
+
+			
+			
+
+		
+			
+			
+			<h2 id="NetAddrToTcpAddr">func <a href="/src/github.com/agamble/btc-crawler/listener.go?s=1139:1199#L57">NetAddrToTcpAddr</a></h2>
+			<pre>func NetAddrToTcpAddr(netAddr *<a href="/pkg/github.com/btcsuite/btcd/wire/">wire</a>.<a href="/pkg/github.com/btcsuite/btcd/wire/#NetAddress">NetAddress</a>) *<a href="/pkg/net/">net</a>.<a href="/pkg/net/#TCPAddr">TCPAddr</a></pre>
+			
+			
+			
+
+		
+			
+			
+			<h2 id="OnionToIp">func <a href="/src/github.com/agamble/btc-crawler/tor_dialer.go?s=893:939#L39">OnionToIp</a></h2>
+			<pre>func OnionToIp(address <a href="/pkg/builtin/#string">string</a>) (<a href="/pkg/net/">net</a>.<a href="/pkg/net/#IP">IP</a>, <a href="/pkg/builtin/#error">error</a>)</pre>
+			<p>
+OnionToIP converts an onion string address to an IP address struct
+</p>
+
+			
+			
+
+		
+			
+			
+			<h2 id="TorUp">func <a href="/src/github.com/agamble/btc-crawler/tor_dialer.go?s=606:623#L26">TorUp</a></h2>
+			<pre>func TorUp() <a href="/pkg/builtin/#bool">bool</a></pre>
+			<p>
+TorUp asserts Tor is running.
+</p>
+
+			
+			
+
+		
+		
+			
+			
+			<h2 id="Crawler">type <a href="/src/github.com/agamble/btc-crawler/crawler.go?s=145:473#L7">Crawler</a></h2>
+			<pre>type Crawler struct {
+    Done chan *<a href="#Image">Image</a>
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewCrawler">func <a href="/src/github.com/agamble/btc-crawler/crawler.go?s=5558:5595#L277">NewCrawler</a></h3>
+				<pre>func NewCrawler(workers <a href="/pkg/builtin/#int">int</a>) *<a href="#Crawler">Crawler</a></pre>
+				<p>
+Create a new crawler with a fixed number of workers
+</p>
+
+				
+				
+			
+
+			
+				
+				<h3 id="Crawler.SeedCrawler">func (*Crawler) <a href="/src/github.com/agamble/btc-crawler/crawler.go?s=4950:4987#L247">SeedCrawler</a></h3>
+				<pre>func (c *<a href="#Crawler">Crawler</a>) SeedCrawler() <a href="/pkg/builtin/#error">error</a></pre>
+				<p>
+Seed the crawler manually
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Crawler.Start">func (*Crawler) <a href="/src/github.com/agamble/btc-crawler/crawler.go?s=4697:4722#L233">Start</a></h3>
+				<pre>func (c *<a href="#Crawler">Crawler</a>) Start()</pre>
+				<p>
+Seed and start the crawler, should be called in its own Goroutine
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Crawler.Stop">func (*Crawler) <a href="/src/github.com/agamble/btc-crawler/crawler.go?s=5408:5432#L269">Stop</a></h3>
+				<pre>func (c *<a href="#Crawler">Crawler</a>) Stop()</pre>
+				<p>
+Sop will block until crawler has been killed
+</p>
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="Decoder">type <a href="/src/github.com/agamble/btc-crawler/decoder.go?s=138:173#L4">Decoder</a></h2>
+			<pre>type Decoder struct {
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewDecoder">func <a href="/src/github.com/agamble/btc-crawler/decoder.go?s=1663:1699#L83">NewDecoder</a></h3>
+				<pre>func NewDecoder(dir <a href="/pkg/builtin/#string">string</a>) *<a href="#Decoder">Decoder</a></pre>
+				
+				
+				
+			
+
+			
+				
+				<h3 id="Decoder.Decode">func (*Decoder) <a href="/src/github.com/agamble/btc-crawler/decoder.go?s=1018:1044#L53">Decode</a></h3>
+				<pre>func (d *<a href="#Decoder">Decoder</a>) Decode()</pre>
+				<p>
+Convert the binary encoded data from the listener output into a human readable JSON format
+</p>
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="Dispatcher">type <a href="/src/github.com/agamble/btc-crawler/dispatcher.go?s=34:60#L1">Dispatcher</a></h2>
+			<pre>type Dispatcher struct {
+}</pre>
+			
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewDispatcher">func <a href="/src/github.com/agamble/btc-crawler/dispatcher.go?s=435:467#L17">NewDispatcher</a></h3>
+				<pre>func NewDispatcher() *<a href="#Dispatcher">Dispatcher</a></pre>
+				
+				
+				
+			
+
+			
+				
+				<h3 id="Dispatcher.BuildImage">func (*Dispatcher) <a href="/src/github.com/agamble/btc-crawler/dispatcher.go?s=158:209#L1">BuildImage</a></h3>
+				<pre>func (d *<a href="#Dispatcher">Dispatcher</a>) BuildImage(workers <a href="/pkg/builtin/#int">int</a>) *<a href="#Image">Image</a></pre>
+				<p>
+BuildImage begins main process, runs crawler and then begins listener on crawler output data
+</p>
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="Image">type <a href="/src/github.com/agamble/btc-crawler/image.go?s=64:262#L1">Image</a></h2>
+			<pre>type Image struct {
+    StartedAt  <a href="/pkg/time/">time</a>.<a href="/pkg/time/#Time">Time</a>
+    FinishedAt <a href="/pkg/time/">time</a>.<a href="/pkg/time/#Time">Time</a>
+
+    Ipv4Count  <a href="/pkg/builtin/#int">int</a>
+    Ipv6Count  <a href="/pkg/builtin/#int">int</a>
+    OnionCount <a href="/pkg/builtin/#int">int</a>
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewImage">func <a href="/src/github.com/agamble/btc-crawler/image.go?s=1801:1823#L88">NewImage</a></h3>
+				<pre>func NewImage() *<a href="#Image">Image</a></pre>
+				
+				
+				
+			
+
+			
+				
+				<h3 id="Image.Add">func (*Image) <a href="/src/github.com/agamble/btc-crawler/image.go?s=329:360#L15">Add</a></h3>
+				<pre>func (i *<a href="#Image">Image</a>) Add(node *<a href="#Node">Node</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Image.AddOfflineNode">func (*Image) <a href="/src/github.com/agamble/btc-crawler/image.go?s=488:530#L23">AddOfflineNode</a></h3>
+				<pre>func (i *<a href="#Image">Image</a>) AddOfflineNode(node *<a href="#Node">Node</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Image.AddOnlineNode">func (*Image) <a href="/src/github.com/agamble/btc-crawler/image.go?s=396:437#L19">AddOnlineNode</a></h3>
+				<pre>func (i *<a href="#Image">Image</a>) AddOnlineNode(node *<a href="#Node">Node</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Image.GetNode">func (*Image) <a href="/src/github.com/agamble/btc-crawler/image.go?s=809:860#L39">GetNode</a></h3>
+				<pre>func (i *<a href="#Image">Image</a>) GetNode(tcpAddr *<a href="/pkg/net/">net</a>.<a href="/pkg/net/#TCPAddr">TCPAddr</a>) *<a href="#Node">Node</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Image.GetNodeFromString">func (*Image) <a href="/src/github.com/agamble/btc-crawler/image.go?s=675:731#L31">GetNodeFromString</a></h3>
+				<pre>func (i *<a href="#Image">Image</a>) GetNodeFromString(nodeAddr <a href="/pkg/builtin/#string">string</a>) *<a href="#Node">Node</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Image.Has">func (*Image) <a href="/src/github.com/agamble/btc-crawler/image.go?s=583:629#L27">Has</a></h3>
+				<pre>func (i *<a href="#Image">Image</a>) Has(tcpAddr *<a href="/pkg/net/">net</a>.<a href="/pkg/net/#TCPAddr">TCPAddr</a>) <a href="/pkg/builtin/#bool">bool</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Image.MarshalJSON">func (*Image) <a href="/src/github.com/agamble/btc-crawler/image.go?s=1161:1206#L62">MarshalJSON</a></h3>
+				<pre>func (i *<a href="#Image">Image</a>) MarshalJSON() ([]<a href="/pkg/builtin/#byte">byte</a>, <a href="/pkg/builtin/#error">error</a>)</pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Image.OnlineNodes">func (*Image) <a href="/src/github.com/agamble/btc-crawler/image.go?s=264:301#L11">OnlineNodes</a></h3>
+				<pre>func (i *<a href="#Image">Image</a>) OnlineNodes() []*<a href="#Node">Node</a></pre>
+				
+				
+				
+				
+			
+				
+				<h3 id="Image.Save">func (*Image) <a href="/src/github.com/agamble/btc-crawler/image.go?s=912:934#L43">Save</a></h3>
+				<pre>func (i *<a href="#Image">Image</a>) Save()</pre>
+				
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="Listener">type <a href="/src/github.com/agamble/btc-crawler/listener.go?s=87:372#L1">Listener</a></h2>
+			<pre>type Listener struct {
+    DoneC chan struct{}
+
+    ListenTxs  <a href="/pkg/builtin/#bool">bool</a>
+    ListenBlks <a href="/pkg/builtin/#bool">bool</a>
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewListener">func <a href="/src/github.com/agamble/btc-crawler/listener.go?s=3267:3331#L143">NewListener</a></h3>
+				<pre>func NewListener(image *<a href="#Image">Image</a>, duration <a href="/pkg/time/">time</a>.<a href="/pkg/time/#Duration">Duration</a>) *<a href="#Listener">Listener</a></pre>
+				<p>
+NewListener creates a new listener from an existing crawler image and run the listener for a fixed duration of time.
+</p>
+
+				
+				
+			
+
+			
+				
+				<h3 id="Listener.AssertOutDirectory">func (*Listener) <a href="/src/github.com/agamble/btc-crawler/listener.go?s=989:1028#L50">AssertOutDirectory</a></h3>
+				<pre>func (l *<a href="#Listener">Listener</a>) AssertOutDirectory()</pre>
+				<p>
+AssertOutDirectory creates the directory to contain the listening data
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Listener.Listen">func (*Listener) <a href="/src/github.com/agamble/btc-crawler/listener.go?s=1940:1967#L87">Listen</a></h3>
+				<pre>func (l *<a href="#Listener">Listener</a>) Listen()</pre>
+				<p>
+Listen begins listening procedure.
+Listener must be initialised first with a list of online nodes.
+</p>
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="Node">type <a href="/src/github.com/agamble/btc-crawler/node.go?s=177:448#L9">Node</a></h2>
+			<pre>type Node struct {
+    TcpAddr *<a href="/pkg/net/">net</a>.<a href="/pkg/net/#TCPAddr">TCPAddr</a>
+
+    Adjacents []*<a href="#Node">Node</a>
+    PVer      <a href="/pkg/builtin/#uint32">uint32</a>
+
+    Online    <a href="/pkg/builtin/#bool">bool</a>
+    Onion     <a href="/pkg/builtin/#bool">bool</a>
+    Services  <a href="/pkg/builtin/#uint64">uint64</a>
+    UserAgent <a href="/pkg/builtin/#string">string</a>
+
+    ListenTxs  <a href="/pkg/builtin/#bool">bool</a>
+    ListenBlks <a href="/pkg/builtin/#bool">bool</a>
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewNode">func <a href="/src/github.com/agamble/btc-crawler/node.go?s=10757:10797#L491">NewNode</a></h3>
+				<pre>func NewNode(tcpAddr *<a href="/pkg/net/">net</a>.<a href="/pkg/net/#TCPAddr">TCPAddr</a>) *<a href="#Node">Node</a></pre>
+				<p>
+NewNode creates a new node from an IP address struct
+</p>
+
+				
+				
+			
+				
+				<h3 id="NewNodeFromString">func <a href="/src/github.com/agamble/btc-crawler/node.go?s=10281:10322#L466">NewNodeFromString</a></h3>
+				<pre>func NewNodeFromString(addr <a href="/pkg/builtin/#string">string</a>) *<a href="#Node">Node</a></pre>
+				<p>
+NewNodeFromString creates new node from IP address string, used to initially seed the crawler.
+</p>
+
+				
+				
+			
+
+			
+				
+				<h3 id="Node.Close">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=9085:9113#L409">Close</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) Close() <a href="/pkg/builtin/#error">error</a></pre>
+				<p>
+Close the connection with a peer
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.Connect">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=1450:1480#L59">Connect</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) Connect() <a href="/pkg/builtin/#error">error</a></pre>
+				<p>
+Attempt to form a TCP connection to the node.
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.GetAddr">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=8397:8449#L377">GetAddr</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) GetAddr() ([]*<a href="/pkg/github.com/btcsuite/btcd/wire/">wire</a>.<a href="/pkg/github.com/btcsuite/btcd/wire/#NetAddress">NetAddress</a>, <a href="/pkg/builtin/#error">error</a>)</pre>
+				<p>
+GetAddr asks the node for its konwn addresses
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.Handshake">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=1897:1929#L80">Handshake</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) Handshake() <a href="/pkg/builtin/#error">error</a></pre>
+				<p>
+Handshake performs the handshake operation according to the Bitcoin protocol.
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.Inv">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=7496:7572#L333">Inv</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) Inv(invC chan&lt;- *<a href="#StampedInv">StampedInv</a>, addrC chan&lt;- []*<a href="/pkg/github.com/btcsuite/btcd/wire/">wire</a>.<a href="/pkg/github.com/btcsuite/btcd/wire/#NetAddress">NetAddress</a>)</pre>
+				<p>
+Inv receives and accordingly processes a received inv message.
+Send unsolicited addr messages upstream to the dispatcher
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.InvWriter">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=4939:5008#L228">InvWriter</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) InvWriter(dataDirName <a href="/pkg/builtin/#string">string</a>, node &lt;-chan *<a href="#StampedInv">StampedInv</a>)</pre>
+				<p>
+InvWriter starts the goroutine which manages disk writing for this node.
+Should only be called as its own goroutine.
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.IsIpv6">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=1333:1361#L54">IsIpv6</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) IsIpv6() <a href="/pkg/builtin/#bool">bool</a></pre>
+				<p>
+Returns true if the node is an IPv6 node.
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.IsTorNode">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=773:804#L41">IsTorNode</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) IsTorNode() <a href="/pkg/builtin/#bool">bool</a></pre>
+				<p>
+Checks if a node&#39;s IP address falls within the special &#39;Tor Range&#39;
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.IsValid">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=9483:9512#L428">IsValid</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) IsValid() <a href="/pkg/builtin/#bool">bool</a></pre>
+				<p>
+IsValid returns whether the node contains a valid address.
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.MarshalJSON">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=9676:9720#L439">MarshalJSON</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) MarshalJSON() ([]<a href="/pkg/builtin/#byte">byte</a>, <a href="/pkg/builtin/#error">error</a>)</pre>
+				<p>
+MarshalJSON returns the JSON format of the node.
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.ReceiveMessage">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=3224:3294#L144">ReceiveMessage</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) ReceiveMessage(commands []<a href="/pkg/builtin/#string">string</a>) (<a href="/pkg/github.com/btcsuite/btcd/wire/">wire</a>.<a href="/pkg/github.com/btcsuite/btcd/wire/#Message">Message</a>, <a href="/pkg/builtin/#error">error</a>)</pre>
+				<p>
+Receive a message with command string within the commands slice.
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.Setup">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=4215:4243#L183">Setup</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) Setup() <a href="/pkg/builtin/#error">error</a></pre>
+				<p>
+Setup is Connect and Handshake as one method.
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.StopWatching">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=7983:8012#L358">StopWatching</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) StopWatching()</pre>
+				<p>
+StopWatching, called synchronously
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.String">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=9358:9388#L423">String</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) String() <a href="/pkg/builtin/#string">string</a></pre>
+				<p>
+String gives the string representation of this node, the string of the IP address.
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.Watch">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=6379:6506#L281">Watch</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) Watch(progressC chan&lt;- *watchProgress, stopC chan&lt;- <a href="/pkg/builtin/#string">string</a>, addrC chan&lt;- []*<a href="/pkg/github.com/btcsuite/btcd/wire/">wire</a>.<a href="/pkg/github.com/btcsuite/btcd/wire/#NetAddress">NetAddress</a>, dataDirName <a href="/pkg/builtin/#string">string</a>)</pre>
+				<p>
+Watch begins listening to the node. Requires an initial connect beforehand.
+Should be run as its own Goroutine.
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Node.WriteInv">func (*Node) <a href="/src/github.com/agamble/btc-crawler/node.go?s=5622:5752#L257">WriteInv</a></h3>
+				<pre>func (n *<a href="#Node">Node</a>) WriteInv(txnEnc *<a href="/pkg/encoding/gob/">gob</a>.<a href="/pkg/encoding/gob/#Encoder">Encoder</a>, blkEnc *<a href="/pkg/encoding/gob/">gob</a>.<a href="/pkg/encoding/gob/#Encoder">Encoder</a>, stampedSightingHolder *<a href="#StampedSighting">StampedSighting</a>, stampedInvs *<a href="#StampedInv">StampedInv</a>)</pre>
+				<p>
+WriteInv writes a specific inv message to disk.
+</p>
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="StampedInv">type <a href="/src/github.com/agamble/btc-crawler/node.go?s=450:524#L27">StampedInv</a></h2>
+			<pre>type StampedInv struct {
+    InvVects  []*<a href="/pkg/github.com/btcsuite/btcd/wire/">wire</a>.<a href="/pkg/github.com/btcsuite/btcd/wire/#InvVect">InvVect</a>
+    Timestamp <a href="/pkg/time/">time</a>.<a href="/pkg/time/#Time">Time</a>
+}</pre>
+			
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="StampedSighting">type <a href="/src/github.com/agamble/btc-crawler/node.go?s=526:603#L32">StampedSighting</a></h2>
+			<pre>type StampedSighting struct {
+    Timestamp <a href="/pkg/time/">time</a>.<a href="/pkg/time/#Time">Time</a>
+    InvVect   *<a href="/pkg/github.com/btcsuite/btcd/wire/">wire</a>.<a href="/pkg/github.com/btcsuite/btcd/wire/#InvVect">InvVect</a>
+}</pre>
+			
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+	
+
+	
+
+
+
+
+
+	
+	
+		<h2 id="pkg-subdirectories">Subdirectories</h2>
+	
+	
+
+
+	<div class="pkg-dir">
+		<table>
+			<tr>
+				<th class="pkg-name">Name</th>
+				<th class="pkg-synopsis">Synopsis</th>
+			</tr>
+
+			
+			<tr>
+				<td colspan="2"><a href="..">..</a></td>
+			</tr>
+			
+
+			
+		</table>
+	</div>
+
+
+	
+
+
+
+<div id="footer">
+Build version go1.6.<br>
+Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
+the content of this page is licensed under the
+Creative Commons Attribution 3.0 License,
+and code is licensed under a <a href="/LICENSE">BSD license</a>.<br>
+<a href="/doc/tos.html">Terms of Service</a> | 
+<a href="http://www.google.com/intl/en/policies/privacy/">Privacy Policy</a>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+
+<!-- TODO(adonovan): load these from <head> using "defer" attribute? -->
+<script type="text/javascript" src="/lib/godoc/jquery.js"></script>
+<script type="text/javascript" src="/lib/godoc/jquery.treeview.js"></script>
+<script type="text/javascript" src="/lib/godoc/jquery.treeview.edit.js"></script>
+
+
+<script>var goVersion = "go1.6";</script>
+<script type="text/javascript" src="/lib/godoc/godocs.js"></script>
+
+</body>
+</html>
+

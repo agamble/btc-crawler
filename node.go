@@ -86,7 +86,7 @@ func (n *Node) Connect() error {
 	return nil
 }
 
-// Perform the handshake operation according to the Bitcoin protocol.
+// Handshake performs the handshake operation according to the Bitcoin protocol.
 func (n *Node) Handshake() error {
 	nonce, err := wire.RandomUint64()
 
@@ -189,7 +189,7 @@ func (n *Node) ReceiveMessage(commands []string) (wire.Message, error) {
 	return nil, errors.New("Failed to receive a message from node")
 }
 
-// Connect and Handshake as one method.
+// Setup is Connect and Handshake as one method.
 func (n *Node) Setup() error {
 	err := n.Connect()
 
@@ -233,7 +233,7 @@ func (n *Node) blockFilePath() string {
 	return n.outPath + "-block"
 }
 
-// Starts the goroutine which manages disk writing for this node.
+// InvWriter starts the goroutine which manages disk writing for this node.
 // Should only be called as its own goroutine.
 func (n *Node) InvWriter(dataDirName string, node <-chan *StampedInv) {
 	n.outPath = path.Join(dataDirName, n.String())
@@ -263,7 +263,7 @@ func (n *Node) InvWriter(dataDirName string, node <-chan *StampedInv) {
 	}
 }
 
-// Write a specific inv message
+// WriteInv writes a specific inv message to disk.
 func (n *Node) WriteInv(txnEnc *gob.Encoder, blkEnc *gob.Encoder, stampedSightingHolder *StampedSighting, stampedInvs *StampedInv) {
 	if stampedSightingHolder == nil {
 		stampedSightingHolder = new(StampedSighting)
@@ -286,7 +286,7 @@ func (n *Node) WriteInv(txnEnc *gob.Encoder, blkEnc *gob.Encoder, stampedSightin
 	}
 }
 
-// Begin listening to the node. Requires an initial connect beforehand.
+// Watch begins listening to the node. Requires an initial connect beforehand.
 // Should be run as its own Goroutine.
 func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, addrC chan<- []*wire.NetAddress, dataDirName string) {
 
@@ -338,7 +338,7 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, addrC
 	}
 }
 
-// Receive and accordingly process an received inv message.
+// Inv receives and accordingly processes a received inv message.
 // Send unsolicited addr messages upstream to the dispatcher
 func (n *Node) Inv(invC chan<- *StampedInv, addrC chan<- []*wire.NetAddress) {
 	res, err := n.ReceiveMessage([]string{"inv", "addr"})
@@ -364,7 +364,7 @@ func (n *Node) Inv(invC chan<- *StampedInv, addrC chan<- []*wire.NetAddress) {
 
 }
 
-// Stop watching, called synchronously
+// StopWatching, called synchronously
 func (n *Node) StopWatching() {
 	n.doneC <- struct{}{}
 	return
@@ -383,7 +383,7 @@ func (n *Node) receiveMessageTimeout(command string) (wire.Message, error) {
 	return msg, nil
 }
 
-// Get known peers of a known node.
+// GetAddr asks the node for its konwn addresses
 func (n *Node) GetAddr() ([]*wire.NetAddress, error) {
 	getAddrMsg := wire.NewMsgGetAddr()
 	n.conn.SetWriteDeadline(time.Now().Add(30 * time.Second))
@@ -429,12 +429,12 @@ func (n *Node) Close() error {
 	return nil
 }
 
-// Get the string representation of this node, the string of the IP address.
+// String gives the string representation of this node, the string of the IP address.
 func (n *Node) String() string {
 	return n.TcpAddr.String()
 }
 
-// Assert the node contains a valid address
+// IsValid returns whether the node contains a valid address.
 func (n *Node) IsValid() bool {
 
 	// obviously a port number of zero won't work
@@ -445,7 +445,7 @@ func (n *Node) IsValid() bool {
 	return true
 }
 
-// Marshal to JSON
+// MarshalJSON returns the JSON format of the node.
 func (n *Node) MarshalJSON() ([]byte, error) {
 	adjsStrs := make([]string, len(n.Adjacents))
 
@@ -472,7 +472,7 @@ func (n *Node) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// Create new node from IP address string, used to initially seed the crawler.
+// NewNodeFromString creates new node from IP address string, used to initially seed the crawler.
 func NewNodeFromString(addr string) *Node {
 	if strings.Contains(addr, ".onion") {
 		ip, err := OnionToIp(addr)
@@ -497,7 +497,7 @@ func NewNodeFromString(addr string) *Node {
 	return NewNode(tcpAddr)
 }
 
-// Create a new node from an IP address struct
+// NewNode creates a new node from an IP address struct
 func NewNode(tcpAddr *net.TCPAddr) *Node {
 	n := new(Node)
 	n.TcpAddr = tcpAddr

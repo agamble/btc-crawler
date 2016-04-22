@@ -7,7 +7,7 @@ import (
 type Dispatcher struct {
 }
 
-// Begin main process, run crawler and then begin listener on crawler output data
+// BuildImage begins main process, runs crawler and then begins listener on crawler output data
 func (d *Dispatcher) BuildImage(workers int) *Image {
 	crawler := NewCrawler(workers)
 
