@@ -239,6 +239,7 @@ func (c *Crawler) add(node *Node) {
 	c.image.Add(node)
 }
 
+// Seed and start the crawler, should be called in its own Goroutine
 func (c *Crawler) Start() {
 	ready := c.assertReadyToStart()
 
@@ -252,6 +253,7 @@ func (c *Crawler) Start() {
 	go c.crawl()
 }
 
+// Seed the crawler manually
 func (c *Crawler) SeedCrawler() error {
 	log.Println("Seeding crawler...")
 
@@ -281,6 +283,7 @@ func (c *Crawler) Stop() {
 	return
 }
 
+// Create a new crawler with a fixed number of workers
 func NewCrawler(workers int) *Crawler {
 	c := new(Crawler)
 	c.workers = workers

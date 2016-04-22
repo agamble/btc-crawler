@@ -56,6 +56,7 @@ func (l *Listener) initialiseStatusMap() {
 	}
 }
 
+// Make the directory to contain the listening data
 func (l *Listener) AssertOutDirectory() {
 	now := time.Now()
 	l.dataDirName = "snapshot-" + now.Format(time.Stamp)
@@ -91,6 +92,7 @@ func (l *Listener) processNewAddrs(netAddrs []*wire.NetAddress) {
 	}
 }
 
+// Begin listening procedure, listener must be initialised first with a list of online nodes.
 func (l *Listener) Listen() {
 	l.AssertOutDirectory()
 	l.startListeners()
@@ -146,6 +148,7 @@ func (l *Listener) printProgress() {
 	log.Printf("Goroutines active for %d nodes", nodes)
 }
 
+// Create a new listener from an existing crawler image and run the listener for a fixed duration of time.
 func NewListener(image *Image, duration time.Duration) *Listener {
 	l := new(Listener)
 	l.progressC = make(chan *watchProgress)

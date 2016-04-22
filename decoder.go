@@ -59,6 +59,7 @@ func (d *Decoder) processFile(name string) []*StampedSighting {
 	return nil
 }
 
+// Convert the binary encoded data from the listener output into a human readable JSON format
 func (d *Decoder) Decode() {
 	gob.Register(StampedSighting{})
 	gob.Register(wire.InvVect{})
