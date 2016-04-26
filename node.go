@@ -286,6 +286,13 @@ func (n *Node) WriteInv(txnEnc *gob.Encoder, blkEnc *gob.Encoder, stampedSightin
 	}
 }
 
+func (n *Node) Ping() {
+	nonce, _ := wire.RandomUint64()
+	n.conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	defer n.conn.SetWriteDeadline(time.Time{})
+	_ = wire.WriteMessage(n.conn, wire.NewMsgPing(nonce), n.PVer, n.btcNet)
+}
+
 // Watch begins listening to the node. Requires an initial connect beforehand.
 // Should be run as its own Goroutine.
 func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, addrC chan<- []*wire.NetAddress, dataDirName string) {
@@ -302,6 +309,9 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, addrC
 		return
 	}
 
+	pingTicker := time.NewTicker(time.Minute * 1)
+	defer pingTicker.Stop()
+
 	// use a ticker to monitor watcher progress
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
@@ -313,6 +323,8 @@ func (n *Node) Watch(progressC chan<- *watchProgress, stopC chan<- string, addrC
 	nilCount := 0
 	for {
 		select {
+		case <-pingTicker.C:
+			n.Ping()
 		case <-n.doneC:
 			return
 		case <-ticker.C:
