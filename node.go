@@ -258,7 +258,7 @@ func (n *Node) InvWriter(dataDirName string, node <-chan *StampedInv) {
 	blkEnc := gob.NewEncoder(blkFile)
 	stampedSightingHolder := new(StampedSighting)
 
-	for stamedInvs := range node {
+	for stampedInvs := range node {
 		n.WriteInv(txnEnc, blkEnc, stampedSightingHolder, stampedInvs)
 	}
 }
